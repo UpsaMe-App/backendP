@@ -116,10 +116,10 @@ namespace UpsaMe_API.Controllers
         [ProducesResponseType(typeof(PostReply), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> AddReply(Guid id, [FromBody] PostReply reply)
+        public async Task<IActionResult> AddReply(Guid id, [FromBody] PostReplyDto dto)
         {
-            if (reply is null) return BadRequest("Body requerido.");
-            if (string.IsNullOrWhiteSpace(reply.Content))
+            if (dto is null) return BadRequest("Body requerido.");
+            if (string.IsNullOrWhiteSpace(dto.Content))
                 return BadRequest("El contenido no puede estar vacío.");
 
             // Autor de la reply = usuario logueado
@@ -128,7 +128,12 @@ namespace UpsaMe_API.Controllers
                 return Unauthorized("Token inválido: no se encontró el ID de usuario.");
 
             var userId = Guid.Parse(userIdClaim.Value);
-            reply.UserId = userId;
+
+            var reply = new PostReply
+            {
+                Content = dto.Content,
+                UserId = userId
+            };
 
             var created = await _service.AddReplyAsync(id, reply);
             if (created == null)
