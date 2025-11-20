@@ -11,46 +11,51 @@ namespace UpsaMe_API.Models
         [Key]
         public Guid Id { get; set; }
 
-        [ForeignKey("User")]
+        [ForeignKey(nameof(User))]
         public Guid UserId { get; set; }
         public User? User { get; set; }
 
+        // Rol del post (define qué campos son válidos/obligatorios en la lógica de servicio)
         [Required]
         public PostRole Role { get; set; }
 
-        // Para ayudante: Objetivo de la ayudantía
-        // Para estudiante: lo podés usar como título libre, o dejar null
-        public string? Title { get; set; }
-
-        // Para ayudante: descripción / contenido
-        // Para estudiante: descripción adicional si quieres
+        // Requerido para todos los roles: Helper, Student y Comment
         [Required]
+        [MaxLength(200)]
+        public string Title { get; set; } = string.Empty;
+
+        // Requerido para todos los roles
+        [Required]
+        [MaxLength(3000)]
         public string Content { get; set; } = string.Empty;
 
-        [ForeignKey("Subject")]
+        // Materia:
+        // - Helper y Student: requerida (se valida en servicio)
+        // - Comment: debe ser null
+        [ForeignKey(nameof(Subject))]
         public Guid? SubjectId { get; set; }
         public Subject? Subject { get; set; }
 
-        // Cantidad de personas:
-        //   - Helper: capacidad máxima de ayudantía
-        //   - Student: cantidad de personas que busca
+        // Capacidad:
+        // - Helper: capacidad actual (cupos disponibles)
+        // - Student: NO se usa (debe ser null)
         public int? Capacity { get; set; }
 
+        // Capacidad máxima de personas (solo Helper)
+        public int? MaxCapacity { get; set; }
+
+        // Disponibilidad de horario via Calendly (solo Helper)
+        [MaxLength(500)]
+        public string? CalendlyUrl { get; set; }
+
+        // Estado y métricas
         public int CapacityUsed { get; set; } = 0;
         public PostStatus Status { get; set; } = PostStatus.Active;
 
         public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
         public DateTime? UpdatedAtUtc { get; set; }
 
-        // 🔹 NUEVO: nombre del docente (para rol Helper)
-        [MaxLength(200)]
-        public string? TeacherName { get; set; }
-
-        // 🔹 NUEVO: temas (para Helper o Student)
-        // Guardamos como texto plano tipo: "Límites, Derivadas, Integrales"
-        [MaxLength(500)]
-        public string? Topics { get; set; }
-
+        // Respuestas/comentarios al post
         public ICollection<PostReply>? Replies { get; set; }
     }
 }

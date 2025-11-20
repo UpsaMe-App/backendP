@@ -34,113 +34,117 @@ namespace UpsaMe_API.Controllers
         }
 
         // ============================================
-        // CREATE POST
+        // CREATE POST (Helper, Student, Comment)
         // ============================================
         [HttpPost]
         [Authorize]
         [ProducesResponseType(typeof(Post), StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        public async Task<IActionResult> Create([FromBody] CreatePostDto dto)
+        public async Task<IActionResult> Create([FromQuery] PostRole role, [FromBody] object body)
         {
-            if (dto is null) return BadRequest("Body requerido.");
-            if (string.IsNullOrWhiteSpace(dto.Content))
-                return BadRequest("El contenido no puede estar vacío.");
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier) ?? User.FindFirst("sub");
+            if (userIdClaim == null) return Unauthorized("Token inválido: no se encontró el ID de usuario.");
+            var userId = Guid.Parse(userIdClaim.Value);
 
-            // 🔹 Validaciones por rol
-            switch (dto.Role)
+            Post created;
+
+            switch (role)
             {
                 case PostRole.Helper:
-                    if (!dto.SubjectId.HasValue)
-                        return BadRequest("Materia (SubjectId) es obligatoria para rol Helper.");
+                {
+                    var dto = System.Text.Json.JsonSerializer.Deserialize<CreateHelperPostDto>(body.ToString()!);
+                    if (dto == null) return BadRequest("Body requerido.");
 
-                    if (!dto.Capacity.HasValue || dto.Capacity.Value <= 0)
-                        return BadRequest("Capacidad máxima (Capacity) debe ser > 0 para rol Helper.");
+                    if (string.IsNullOrWhiteSpace(dto.Title)) return BadRequest("Título es obligatorio.");
+                    if (string.IsNullOrWhiteSpace(dto.Content)) return BadRequest("Contenido es obligatorio.");
+                    if (dto.SubjectId == Guid.Empty) return BadRequest("SubjectId es obligatorio.");
+                    if (dto.Capacity < 1) return BadRequest("Capacity debe ser >= 1.");
+                    if (dto.MaxCapacity < 1) return BadRequest("MaxCapacity debe ser >= 1.");
+                    if (dto.Capacity > dto.MaxCapacity) return BadRequest("Capacity no puede superar MaxCapacity.");
+                    if (string.IsNullOrWhiteSpace(dto.CalendlyUrl)) return BadRequest("CalendlyUrl es obligatorio.");
+
+                    created = await _service.CreateHelperAsync(userId, dto);
                     break;
+                }
 
                 case PostRole.Student:
-                    if (!dto.SubjectId.HasValue)
-                        return BadRequest("Materia (SubjectId) es obligatoria para rol Student.");
+                {
+                    var dto = System.Text.Json.JsonSerializer.Deserialize<CreateStudentPostDto>(body.ToString()!);
+                    if (dto == null) return BadRequest("Body requerido.");
 
-                    if (dto.Topics == null || dto.Topics.Length == 0)
-                        return BadRequest("Debes especificar al menos un tema para rol Student.");
+                    if (string.IsNullOrWhiteSpace(dto.Title)) return BadRequest("Título es obligatorio.");
+                    if (string.IsNullOrWhiteSpace(dto.Content)) return BadRequest("Contenido es obligatorio.");
+                    if (dto.SubjectId == Guid.Empty) return BadRequest("SubjectId es obligatorio.");
 
-                    if (!dto.Capacity.HasValue || dto.Capacity.Value <= 0)
-                        return BadRequest("Cantidad de personas (Capacity) debe ser > 0 para rol Student.");
+                    created = await _service.CreateStudentAsync(userId, dto);
                     break;
+                }
 
                 case PostRole.Comment:
-                    // comentario libre
+                {
+                    var dto = System.Text.Json.JsonSerializer.Deserialize<CreateCommentPostDto>(body.ToString()!);
+                    if (dto == null) return BadRequest("Body requerido.");
+
+                    if (string.IsNullOrWhiteSpace(dto.Title)) return BadRequest("Título es obligatorio.");
+                    if (string.IsNullOrWhiteSpace(dto.Content)) return BadRequest("Contenido es obligatorio.");
+
+                    created = await _service.CreateCommentAsync(userId, dto);
                     break;
+                }
 
                 default:
                     return BadRequest("Role inválido.");
             }
 
-            // Obtener userId del token
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier) ?? User.FindFirst("sub");
-            if (userIdClaim == null)
-                return Unauthorized("Token inválido: no se encontró el ID de usuario.");
-
-            var userId = Guid.Parse(userIdClaim.Value);
-
-            // Crear post
-            var post = new Post
-            {
-                Id = Guid.NewGuid(),
-                UserId = userId,
-                Role = dto.Role,
-                Title = dto.Title,
-                Content = dto.Content,
-                SubjectId = dto.SubjectId,
-                Capacity = dto.Capacity,
-                CapacityUsed = 0,
-                Status = PostStatus.Active,
-                CreatedAtUtc = DateTime.UtcNow,
-
-                TeacherName = dto.TeacherName,
-                Topics = dto.Topics != null && dto.Topics.Length > 0
-                    ? string.Join(", ", dto.Topics)
-                    : null
-            };
-
-            var created = await _service.CreateAsync(post);
             return CreatedAtAction(nameof(GetFeed), new { id = created.Id }, created);
         }
 
         // ============================================
         // ADD REPLY
         // ============================================
-        [HttpPost("{id}/replies")]
+        [HttpPost("{postId}/replies")]
         [Authorize]
         [ProducesResponseType(typeof(PostReply), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> AddReply(Guid id, [FromBody] PostReply reply)
+        public async Task<IActionResult> AddReply(Guid postId, [FromBody] CreateReplyDto dto)
         {
-            if (reply is null) return BadRequest("Body requerido.");
-            if (string.IsNullOrWhiteSpace(reply.Content))
+            if (dto is null) return BadRequest("Body requerido.");
+            if (string.IsNullOrWhiteSpace(dto.Content))
                 return BadRequest("El contenido no puede estar vacío.");
 
-            // Autor de la reply = usuario logueado
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier) ?? User.FindFirst("sub");
             if (userIdClaim == null)
                 return Unauthorized("Token inválido: no se encontró el ID de usuario.");
 
             var userId = Guid.Parse(userIdClaim.Value);
-            reply.UserId = userId;
 
-            var created = await _service.AddReplyAsync(id, reply);
+            var reply = new PostReply
+            {
+                Id = Guid.NewGuid(),
+                PostId = postId,
+                UserId = userId,
+                Content = dto.Content.Trim(),
+                CreatedAtUtc = DateTime.UtcNow
+            };
+
+            var created = await _service.AddReplyAsync(postId, reply);
             if (created == null)
-                return NotFound("No se encontró la publicación.");
+                return NotFound(new { message = "Post no encontrado o eliminado." });
 
-            return Ok(created);
+            return Ok(new
+            {
+                created.Id,
+                created.Content,
+                created.CreatedAtUtc,
+                created.UserId
+            });
         }
 
         // ============================================
-        // SEARCH POSTS BY SUBJECT (la lupita)
+        // SEARCH POSTS BY SUBJECT
         // ============================================
-        /// <summary>Busca publicaciones por nombre de materia.</summary>
         [HttpGet("search-by-subject")]
         [AllowAnonymous]
         [ProducesResponseType(typeof(IEnumerable<object>), StatusCodes.Status200OK)]
@@ -151,6 +155,53 @@ namespace UpsaMe_API.Controllers
         {
             var results = await _service.SearchPostsBySubjectAsync(q, page, pageSize);
             return Ok(results);
+        }
+
+        // ============================================
+        // UPDATE POST (solo dueño)
+        // ============================================
+        [HttpPut("{postId}")]
+        [Authorize]
+        public async Task<IActionResult> Update(Guid postId, [FromBody] UpdatePostDto dto)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier) ?? User.FindFirst("sub");
+            if (userIdClaim == null) return Unauthorized();
+            var userId = Guid.Parse(userIdClaim.Value);
+
+            var updated = await _service.UpdateAsync(postId, userId, dto);
+            if (updated == null) return NotFound("Post no encontrado o no autorizado.");
+            return Ok(updated);
+        }
+
+        // ============================================
+        // DELETE POST (solo dueño, soft delete)
+        // ============================================
+        [HttpDelete("{postId}")]
+        [Authorize]
+        public async Task<IActionResult> Delete(Guid postId)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier) ?? User.FindFirst("sub");
+            if (userIdClaim == null) return Unauthorized();
+            var userId = Guid.Parse(userIdClaim.Value);
+
+            var deleted = await _service.DeleteAsync(postId, userId);
+            if (!deleted) return NotFound("Post no encontrado o no autorizado.");
+            return NoContent();
+        }
+
+        // ============================================
+        // GET MY POSTS (solo dueño)
+        // ============================================
+        [HttpGet("mine")]
+        [Authorize]
+        public async Task<IActionResult> GetMyPosts()
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier) ?? User.FindFirst("sub");
+            if (userIdClaim == null) return Unauthorized();
+            var userId = Guid.Parse(userIdClaim.Value);
+
+            var posts = await _service.GetByUserAsync(userId);
+            return Ok(posts);
         }
     }
 }

@@ -53,7 +53,8 @@ namespace UpsaMe_API.Services
                 FirstName = dto.FirstName?.Trim() ?? string.Empty,
                 LastName  = dto.LastName?.Trim()  ?? string.Empty,
                 CareerId  = dto.CareerId,   // 👈 AQUÍ el GUID de la carrera
-                Semester  = dto.Semester
+                Semester  = dto.Semester,
+                Phone = dto.Phone, // 🔹 aquí
             };
 
             _context.Users.Add(user);

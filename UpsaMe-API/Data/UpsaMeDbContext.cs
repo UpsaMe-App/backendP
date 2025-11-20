@@ -14,7 +14,7 @@ namespace UpsaMe_API.Data
         public DbSet<Faculty> Faculties => Set<Faculty>();
         public DbSet<Career> Careers => Set<Career>();
         public DbSet<Subject> Subjects => Set<Subject>();
-
+        
         // Social
         public DbSet<Post> Posts => Set<Post>();
         public DbSet<PostReply> PostReplies => Set<PostReply>();
