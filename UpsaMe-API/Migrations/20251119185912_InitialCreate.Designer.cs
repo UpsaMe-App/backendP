@@ -12,8 +12,8 @@ using UpsaMe_API.Data;
 namespace UpsaMe_API.Migrations
 {
     [DbContext(typeof(UpsaMeDbContext))]
-    [Migration("20251118234411_InitialCreateNotiyonesignal")]
-    partial class InitialCreateNotiyonesignal
+    [Migration("20251119185912_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -110,8 +110,8 @@ namespace UpsaMe_API.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)");
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<string>("Slug")
                         .IsRequired()
@@ -136,8 +136,8 @@ namespace UpsaMe_API.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)");
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<string>("Slug")
                         .IsRequired()
@@ -174,8 +174,8 @@ namespace UpsaMe_API.Migrations
 
                     b.Property<string>("Title")
                         .IsRequired()
-                        .HasMaxLength(120)
-                        .HasColumnType("nvarchar(120)");
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<int>("Type")
                         .HasColumnType("int");
@@ -185,7 +185,7 @@ namespace UpsaMe_API.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId", "IsRead");
+                    b.HasIndex("UserId", "IsRead", "CreatedAtUtc");
 
                     b.ToTable("Notifications");
                 });
@@ -221,6 +221,11 @@ namespace UpsaMe_API.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("DeviceId")
+                        .IsUnique();
+
+                    b.HasIndex("UserId");
+
                     b.ToTable("NotificationDevices");
                 });
 
@@ -238,7 +243,8 @@ namespace UpsaMe_API.Migrations
 
                     b.Property<string>("Content")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
 
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("datetime2");
@@ -257,7 +263,8 @@ namespace UpsaMe_API.Migrations
                         .HasColumnType("nvarchar(200)");
 
                     b.Property<string>("Title")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<string>("Topics")
                         .HasMaxLength(500)
@@ -271,9 +278,9 @@ namespace UpsaMe_API.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("SubjectId");
+                    b.HasIndex("SubjectId", "Status");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("UserId", "Status");
 
                     b.HasIndex("Role", "Status", "CreatedAtUtc");
 
@@ -288,7 +295,8 @@ namespace UpsaMe_API.Migrations
 
                     b.Property<string>("Content")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
 
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("datetime2");
@@ -314,37 +322,24 @@ namespace UpsaMe_API.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTime>("CreatedAtUtc")
+                    b.Property<string>("CalendlyEventUri")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("DealId")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("EndsAtUtc")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("InviteeEmail")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("MeetingUrl")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<Guid>("MentorUserId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("StartsAtUtc")
+                    b.Property<DateTime>("ScheduledAt")
                         .HasColumnType("datetime2");
 
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
-                    b.Property<DateTime?>("UpdatedAtUtc")
-                        .HasColumnType("datetime2");
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("MentorUserId");
+                    b.HasIndex("UserId");
 
                     b.ToTable("Sessions");
                 });
@@ -364,8 +359,8 @@ namespace UpsaMe_API.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)");
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<string>("Slug")
                         .HasMaxLength(100)
@@ -391,18 +386,18 @@ namespace UpsaMe_API.Migrations
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
 
                     b.Property<string>("FirstName")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("LastName")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()
@@ -439,27 +434,27 @@ namespace UpsaMe_API.Migrations
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("UpsaMe_API.Models.WebhookLog", b =>
+            modelBuilder.Entity("UpsaMe_API.Models.WebHookLog", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("EventType")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Payload")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime>("ReceivedAtUtc")
+                    b.Property<DateTime>("ReceivedAt")
                         .HasColumnType("datetime2");
-
-                    b.Property<string>("Source")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
 
                     b.HasKey("Id");
 
-                    b.ToTable("WebhookLogs");
+                    b.ToTable("WebHookLogs");
                 });
 
             modelBuilder.Entity("UpsaMe_API.Models.Career", b =>
@@ -471,6 +466,24 @@ namespace UpsaMe_API.Migrations
                         .IsRequired();
 
                     b.Navigation("Faculty");
+                });
+
+            modelBuilder.Entity("UpsaMe_API.Models.Notification", b =>
+                {
+                    b.HasOne("UpsaMe_API.Models.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("UpsaMe_API.Models.NotificationDevice", b =>
+                {
+                    b.HasOne("UpsaMe_API.Models.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("UpsaMe_API.Models.Post", b =>
@@ -512,13 +525,13 @@ namespace UpsaMe_API.Migrations
 
             modelBuilder.Entity("UpsaMe_API.Models.Session", b =>
                 {
-                    b.HasOne("UpsaMe_API.Models.User", "Mentoruser")
+                    b.HasOne("UpsaMe_API.Models.User", "User")
                         .WithMany()
-                        .HasForeignKey("MentorUserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("Mentoruser");
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("UpsaMe_API.Models.Subject", b =>
