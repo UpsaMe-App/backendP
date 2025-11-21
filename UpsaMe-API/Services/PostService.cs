@@ -49,9 +49,15 @@ namespace UpsaMe_API.Services
                     p.CalendlyUrl,
                     p.CapacityUsed,
                     p.CreatedAtUtc,
+
+                    // Para ir al perfil del autor desde el frontend
                     AuthorId = p.UserId,
                     Author = p.User != null ? $"{p.User.FirstName} {p.User.LastName}" : "Anónimo",
+
+                    // Para mostrar la materia en la card
+                    SubjectId = p.SubjectId,
                     Subject = p.Subject != null ? p.Subject.Name : null,
+
                     RepliesCount = p.Replies != null ? p.Replies.Count : 0
                 })
                 .ToListAsync();
@@ -86,8 +92,29 @@ namespace UpsaMe_API.Services
         // ============================================================
         public async Task<Post> CreateHelperAsync(Guid userId, CreateHelperPostDto dto)
         {
-            var exists = await _context.Subjects.AsNoTracking().AnyAsync(s => s.Id == dto.SubjectId);
-            if (!exists) throw new InvalidOperationException("La materia (SubjectId) no existe.");
+            if (dto.SubjectId == Guid.Empty)
+                throw new InvalidOperationException("SubjectId es obligatorio.");
+
+            var exists = await _context.Subjects
+                .AsNoTracking()
+                .AnyAsync(s => s.Id == dto.SubjectId);
+
+            if (!exists)
+                throw new InvalidOperationException("La materia (SubjectId) no existe.");
+
+            if (dto.Capacity < 1)
+                throw new InvalidOperationException("Capacity debe ser >= 1.");
+            if (dto.MaxCapacity < 1)
+                throw new InvalidOperationException("MaxCapacity debe ser >= 1.");
+            if (dto.Capacity > dto.MaxCapacity)
+                throw new InvalidOperationException("Capacity no puede superar MaxCapacity.");
+
+            if (string.IsNullOrWhiteSpace(dto.Title))
+                throw new InvalidOperationException("El título es obligatorio.");
+            if (string.IsNullOrWhiteSpace(dto.Content))
+                throw new InvalidOperationException("El contenido es obligatorio.");
+            if (string.IsNullOrWhiteSpace(dto.CalendlyUrl))
+                throw new InvalidOperationException("CalendlyUrl es obligatorio.");
 
             var post = new Post
             {
@@ -115,8 +142,20 @@ namespace UpsaMe_API.Services
         // ============================================================
         public async Task<Post> CreateStudentAsync(Guid userId, CreateStudentPostDto dto)
         {
-            var exists = await _context.Subjects.AsNoTracking().AnyAsync(s => s.Id == dto.SubjectId);
-            if (!exists) throw new InvalidOperationException("La materia (SubjectId) no existe.");
+            if (dto.SubjectId == Guid.Empty)
+                throw new InvalidOperationException("SubjectId es obligatorio.");
+
+            var exists = await _context.Subjects
+                .AsNoTracking()
+                .AnyAsync(s => s.Id == dto.SubjectId);
+
+            if (!exists)
+                throw new InvalidOperationException("La materia (SubjectId) no existe.");
+
+            if (string.IsNullOrWhiteSpace(dto.Title))
+                throw new InvalidOperationException("El título es obligatorio.");
+            if (string.IsNullOrWhiteSpace(dto.Content))
+                throw new InvalidOperationException("El contenido es obligatorio.");
 
             var post = new Post
             {
@@ -144,6 +183,12 @@ namespace UpsaMe_API.Services
         // ============================================================
         public async Task<Post> CreateCommentAsync(Guid userId, CreateCommentPostDto dto)
         {
+            if (string.IsNullOrWhiteSpace(dto.Title))
+                throw new InvalidOperationException("El título es obligatorio.");
+
+            if (string.IsNullOrWhiteSpace(dto.Content))
+                throw new InvalidOperationException("El contenido es obligatorio.");
+
             var post = new Post
             {
                 Id = Guid.NewGuid(),
@@ -265,10 +310,10 @@ namespace UpsaMe_API.Services
                 return null;
 
             if (!string.IsNullOrWhiteSpace(dto.Title))
-                post.Title = dto.Title!.Trim();
+                post.Title = dto.Title.Trim();
 
             if (!string.IsNullOrWhiteSpace(dto.Content))
-                post.Content = dto.Content!.Trim();
+                post.Content = dto.Content.Trim();
 
             post.UpdatedAtUtc = DateTime.UtcNow;
 
@@ -305,7 +350,4 @@ namespace UpsaMe_API.Services
                 .ToListAsync();
         }
     }
-}
-
-
-
+}                 

@@ -58,4 +58,4 @@ namespace UpsaMe_API.Models
         // Respuestas/comentarios al post
         public ICollection<PostReply>? Replies { get; set; }
     }
-}
+}      
