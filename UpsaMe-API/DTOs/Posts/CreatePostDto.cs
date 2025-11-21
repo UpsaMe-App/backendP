@@ -1,6 +1,6 @@
 ﻿namespace UpsaMe_API.DTOs.Posts
 {
-    // 🔹 Para crear post de AYUDANTE
+    // 🔹 Paraa crear post de AYUDANTE
     public class CreateHelperPostDto
     {
         // Los rgit fetch origin
