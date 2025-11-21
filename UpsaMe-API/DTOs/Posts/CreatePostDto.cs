@@ -3,14 +3,14 @@
     // 🔹 Para crear post de AYUDANTE
     public class CreateHelperPostDto
     {
-        // Requeridos
+        // Los rgit fetch origin
         public string Title { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;
 
         // Materia (obligatoria)
         public Guid SubjectId { get; set; }
 
-        // Capacidad actual (cupos abiertos) y máxima
+        // Capacidad actual (cupos abiertoss) y máxima
         public int Capacity { get; set; }
         public int MaxCapacity { get; set; }
 
