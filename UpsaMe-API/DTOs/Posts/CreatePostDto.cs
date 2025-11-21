@@ -1,38 +1,44 @@
-﻿namespace UpsaMe_API.DTOs.Posts
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace UpsaMe_API.DTOs.Posts
 {
-    // 🔹 Para crear post de AYUDANTE
+    // 🧙‍♂️ Crear post de AYUDANTE
     public class CreateHelperPostDto
     {
-        // Los rgit fetch origin
-        public string Title { get; set; } = string.Empty;
-        public string Content { get; set; } = string.Empty;
+        [Required] [MaxLength(200)] public string Title { get; set; } = string.Empty;
 
-        // Materia (obligatoria)
-        public Guid SubjectId { get; set; }
+        [Required] [MaxLength(3000)] public string Content { get; set; } = string.Empty;
 
-        // Capacidad actual (cupos abiertoss) y máxima
+        [Required] public Guid SubjectId { get; set; }
+
+        // Capacidad actual de cupos disponibles
+        [Range(1, int.MaxValue, ErrorMessage = "Capacity debe ser >= 1.")]
         public int Capacity { get; set; }
+
+        // Capacidad máxima de personas
+        [Range(1, int.MaxValue, ErrorMessage = "MaxCapacity debe ser >= 1.")]
         public int MaxCapacity { get; set; }
 
-        // URL de disponibilidad (Calendly)
-        public string CalendlyUrl { get; set; } = string.Empty;
+        // Disponibilidad de horario (Calendly)
+        [Required] [MaxLength(500)] public string CalendlyUrl { get; set; } = string.Empty;
     }
 
-    // 🔹 Para crear post de ESTUDIANTE
+    // 🎓 Crear post de ESTUDIANTE
     public class CreateStudentPostDto
     {
-        // Requeridos
-        public string Title { get; set; } = string.Empty;
-        public string Content { get; set; } = string.Empty;
+        [Required] [MaxLength(200)] public string Title { get; set; } = string.Empty;
 
-        // Materia (obligatoria)
-        public Guid SubjectId { get; set; }
+        [Required] [MaxLength(3000)] public string Content { get; set; } = string.Empty;
+
+        [Required] public Guid SubjectId { get; set; }
     }
 
-    // 🔹 Para crear COMENTARIO
+    // 💬 Crear post de COMENTARIO
     public class CreateCommentPostDto
     {
-        public string Title { get; set; } = string.Empty;
-        public string Content { get; set; } = string.Empty;
+        [Required] [MaxLength(200)] public string Title { get; set; } = string.Empty;
+
+        [Required] [MaxLength(3000)] public string Content { get; set; } = string.Empty;
     }
-}
+
+} 

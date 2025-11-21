@@ -19,7 +19,7 @@ namespace UpsaMe_API.Controllers
         }
 
         // ============================================
-        // GET FEED
+        // GET FEED (Home)
         // ============================================
         [HttpGet]
         [AllowAnonymous]
@@ -34,76 +34,99 @@ namespace UpsaMe_API.Controllers
         }
 
         // ============================================
-        // CREATE POST (Helper, Student, Comment)
+        // CREATE HELPER POST
+        // Campos: Título, Materia, Capacity, MaxCapacity, CalendlyUrl, Content
         // ============================================
-        [HttpPost]
+        [HttpPost("helper")]
         [Authorize]
         [ProducesResponseType(typeof(Post), StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        public async Task<IActionResult> Create([FromQuery] PostRole role, [FromBody] object body)
+        public async Task<IActionResult> CreateHelper([FromBody] CreateHelperPostDto dto)
         {
+            if (dto == null) return BadRequest("Body requerido.");
+
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier) ?? User.FindFirst("sub");
-            if (userIdClaim == null) return Unauthorized("Token inválido: no se encontró el ID de usuario.");
+            if (userIdClaim == null)
+                return Unauthorized("Token inválido: no se encontró el ID de usuario.");
+
             var userId = Guid.Parse(userIdClaim.Value);
 
-            Post created;
-
-            switch (role)
+            try
             {
-                case PostRole.Helper:
-                {
-                    var dto = System.Text.Json.JsonSerializer.Deserialize<CreateHelperPostDto>(body.ToString()!);
-                    if (dto == null) return BadRequest("Body requerido.");
-
-                    if (string.IsNullOrWhiteSpace(dto.Title)) return BadRequest("Título es obligatorio.");
-                    if (string.IsNullOrWhiteSpace(dto.Content)) return BadRequest("Contenido es obligatorio.");
-                    if (dto.SubjectId == Guid.Empty) return BadRequest("SubjectId es obligatorio.");
-                    if (dto.Capacity < 1) return BadRequest("Capacity debe ser >= 1.");
-                    if (dto.MaxCapacity < 1) return BadRequest("MaxCapacity debe ser >= 1.");
-                    if (dto.Capacity > dto.MaxCapacity) return BadRequest("Capacity no puede superar MaxCapacity.");
-                    if (string.IsNullOrWhiteSpace(dto.CalendlyUrl)) return BadRequest("CalendlyUrl es obligatorio.");
-
-                    created = await _service.CreateHelperAsync(userId, dto);
-                    break;
-                }
-
-                case PostRole.Student:
-                {
-                    var dto = System.Text.Json.JsonSerializer.Deserialize<CreateStudentPostDto>(body.ToString()!);
-                    if (dto == null) return BadRequest("Body requerido.");
-
-                    if (string.IsNullOrWhiteSpace(dto.Title)) return BadRequest("Título es obligatorio.");
-                    if (string.IsNullOrWhiteSpace(dto.Content)) return BadRequest("Contenido es obligatorio.");
-                    if (dto.SubjectId == Guid.Empty) return BadRequest("SubjectId es obligatorio.");
-
-                    created = await _service.CreateStudentAsync(userId, dto);
-                    break;
-                }
-
-                case PostRole.Comment:
-                {
-                    var dto = System.Text.Json.JsonSerializer.Deserialize<CreateCommentPostDto>(body.ToString()!);
-                    if (dto == null) return BadRequest("Body requerido.");
-
-                    if (string.IsNullOrWhiteSpace(dto.Title)) return BadRequest("Título es obligatorio.");
-                    if (string.IsNullOrWhiteSpace(dto.Content)) return BadRequest("Contenido es obligatorio.");
-
-                    created = await _service.CreateCommentAsync(userId, dto);
-                    break;
-                }
-
-                default:
-                    return BadRequest("Role inválido.");
+                var created = await _service.CreateHelperAsync(userId, dto);
+                return CreatedAtAction(nameof(GetFeed), new { id = created.Id }, created);
             }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
 
-            return CreatedAtAction(nameof(GetFeed), new { id = created.Id }, created);
+        // ============================================
+        // CREATE STUDENT POST
+        // Campos: Título, Materia, Contenido
+        // ============================================
+        [HttpPost("student")]
+        [Authorize]
+        [ProducesResponseType(typeof(Post), StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> CreateStudent([FromBody] CreateStudentPostDto dto)
+        {
+            if (dto == null) return BadRequest("Body requerido.");
+
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier) ?? User.FindFirst("sub");
+            if (userIdClaim == null)
+                return Unauthorized("Token inválido: no se encontró el ID de usuario.");
+
+            var userId = Guid.Parse(userIdClaim.Value);
+
+            try
+            {
+                var created = await _service.CreateStudentAsync(userId, dto);
+                return CreatedAtAction(nameof(GetFeed), new { id = created.Id }, created);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        // ============================================
+        // CREATE COMMENT POST
+        // Campos: Título, Contenido
+        // ============================================
+        [HttpPost("comment")]
+        [Authorize]
+        [ProducesResponseType(typeof(Post), StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> CreateComment([FromBody] CreateCommentPostDto dto)
+        {
+            if (dto == null) return BadRequest("Body requerido.");
+
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier) ?? User.FindFirst("sub");
+            if (userIdClaim == null)
+                return Unauthorized("Token inválido: no se encontró el ID de usuario.");
+
+            var userId = Guid.Parse(userIdClaim.Value);
+
+            try
+            {
+                var created = await _service.CreateCommentAsync(userId, dto);
+                return CreatedAtAction(nameof(GetFeed), new { id = created.Id }, created);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         // ============================================
         // ADD REPLY
         // ============================================
-        [HttpPost("{postId}/replies")]
+        [HttpPost("{postId:guid}/replies")]
         [Authorize]
         [ProducesResponseType(typeof(PostReply), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -160,8 +183,10 @@ namespace UpsaMe_API.Controllers
         // ============================================
         // UPDATE POST (solo dueño)
         // ============================================
-        [HttpPut("{postId}")]
+        [HttpPut("{postId:guid}")]
         [Authorize]
+        [ProducesResponseType(typeof(Post), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> Update(Guid postId, [FromBody] UpdatePostDto dto)
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier) ?? User.FindFirst("sub");
@@ -176,8 +201,10 @@ namespace UpsaMe_API.Controllers
         // ============================================
         // DELETE POST (solo dueño, soft delete)
         // ============================================
-        [HttpDelete("{postId}")]
+        [HttpDelete("{postId:guid}")]
         [Authorize]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> Delete(Guid postId)
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier) ?? User.FindFirst("sub");
@@ -194,6 +221,7 @@ namespace UpsaMe_API.Controllers
         // ============================================
         [HttpGet("mine")]
         [Authorize]
+        [ProducesResponseType(typeof(IEnumerable<Post>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetMyPosts()
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier) ?? User.FindFirst("sub");
@@ -204,4 +232,4 @@ namespace UpsaMe_API.Controllers
             return Ok(posts);
         }
     }
-}
+}  
