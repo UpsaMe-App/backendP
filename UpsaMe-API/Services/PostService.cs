@@ -225,7 +225,7 @@ namespace UpsaMe_API.Services
                 .Where(p => p.Id == postId && p.Status != PostStatus.Deleted)
                 .FirstOrDefaultAsync();
 
-            if (post == null)
+            if (post == null) //..
                 return null;
 
             reply.Id = Guid.NewGuid();
