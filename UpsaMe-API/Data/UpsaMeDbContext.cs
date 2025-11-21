@@ -9,6 +9,7 @@ namespace UpsaMe_API.Data
 
         public DbSet<NotificationDevice> NotificationDevices => Set<NotificationDevice>();
         public DbSet<Notification> Notifications => Set<Notification>();
+        
         // Core
         public DbSet<User> Users => Set<User>();
         public DbSet<Faculty> Faculties => Set<Faculty>();
@@ -25,11 +26,14 @@ namespace UpsaMe_API.Data
         public DbSet<Session> Sessions => Set<Session>();
         public DbSet<WebhookLog> WebhookLogs => Set<WebhookLog>();
 
+        // User connections
+        public DbSet<UserConnection> UserConnections => Set<UserConnection>();
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
-            // ========== Índices únicos básicos ==========
+            // ========== Índices únicos ==========
             modelBuilder.Entity<User>()
                 .HasIndex(u => u.Email)
                 .IsUnique();
@@ -37,17 +41,14 @@ namespace UpsaMe_API.Data
             modelBuilder.Entity<Career>()
                 .HasIndex(c => c.Slug)
                 .IsUnique();
-            
-            // 👇 AQUÍ AGREGÁS ESTE NUEVO
+
             modelBuilder.Entity<Faculty>()
                 .HasIndex(f => f.Slug)
                 .IsUnique();
-            
-            // Sugerido: si vas a buscar Subjects por slug, al menos indexarlo
+
             modelBuilder.Entity<Subject>()
                 .HasIndex(s => s.Slug);
 
-            // Únicos por diseño (URIs de Calendly)
             modelBuilder.Entity<CalendlyEvent>()
                 .HasIndex(e => e.EventUri)
                 .IsUnique();
@@ -56,13 +57,16 @@ namespace UpsaMe_API.Data
                 .HasIndex(et => et.EventTypeUri)
                 .IsUnique();
 
-            // Feed rápido: índice compuesto por Role/Status/CreatedAtUtc
             modelBuilder.Entity<Post>()
                 .HasIndex(p => new { p.Role, p.Status, p.CreatedAtUtc });
 
-            // Notificaciones: listar no leídas por usuario
             modelBuilder.Entity<Notification>()
                 .HasIndex(n => new { n.UserId, n.IsRead });
+
+            // 👇 Indice UserConnection
+            modelBuilder.Entity<UserConnection>()
+                .HasIndex(c => c.UserId)
+                .IsUnique();
 
             // ========== Relaciones ==========
             modelBuilder.Entity<Career>()
@@ -82,7 +86,7 @@ namespace UpsaMe_API.Data
                 .WithMany()
                 .HasForeignKey(p => p.UserId)
                 .OnDelete(DeleteBehavior.Restrict);
-            
+
             modelBuilder.Entity<User>()
                 .HasOne(u => u.Career)
                 .WithMany(c => c.Users)
@@ -106,9 +110,6 @@ namespace UpsaMe_API.Data
                 .WithMany()
                 .HasForeignKey(r => r.UserId)
                 .OnDelete(DeleteBehavior.Restrict);
-            
-            
         }
     }
 }
-

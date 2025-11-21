@@ -12,26 +12,22 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.ResponseCompression;
 using System.IO.Compression;
 using Microsoft.Extensions.FileProviders;
+using UpsaMe_API.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // =============================
 // HTTP clients / DI
 // =============================
-// You already had OneSignalHelper registered; keep that.
 builder.Services.AddHttpClient<OneSignalHelper>();
 builder.Services.AddScoped<NotificationService>();
 builder.Services.AddScoped<OneSignalHelper>();
 
-// Register CalendlyService as a typed HttpClient.
-// IMPORTANT: CalendlyService should have a constructor like:
-// public CalendlyService(HttpClient httpClient) { _client = httpClient; }
 builder.Services.AddHttpClient<CalendlyService>(client =>
 {
-    // BaseUrl read from configuration (appsettings or env/user-secrets)
     var baseUrl = builder.Configuration["Calendly:BaseUrl"] ?? "https://api.calendly.com/";
     client.BaseAddress = new Uri(baseUrl);
-    // Don't put ApiKey here in code; we add default header from config:
+
     var apiKey = builder.Configuration["Calendly:ApiKey"];
     if (!string.IsNullOrWhiteSpace(apiKey))
     {
@@ -41,12 +37,10 @@ builder.Services.AddHttpClient<CalendlyService>(client =>
 });
 
 // =============================
-// APPSETTINGS (tipados)
+// APPSETTINGS tipados
 // =============================
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("JwtSettings"));
 builder.Services.Configure<AzureSettings>(builder.Configuration.GetSection("AzureSettings"));
-// Optional: if you create a OneSignalSettings class, uncomment the next line and create the class in Config/
-// builder.Services.Configure<OneSignalSettings>(builder.Configuration.GetSection("OneSignal"));
 
 // =============================
 // CORS
@@ -61,9 +55,8 @@ builder.Services.AddCors(options =>
 });
 
 // =============================
-// Compression & Caching (rendimiento)
+// Compression & Caching
 // =============================
-// Response compression
 builder.Services.AddResponseCompression(options =>
 {
     options.EnableForHttps = true;
@@ -74,7 +67,6 @@ builder.Services.Configure<GzipCompressionProviderOptions>(options =>
     options.Level = CompressionLevel.Fastest;
 });
 
-// Response caching (control simple de cache HTTP)
 builder.Services.AddResponseCaching();
 
 // =============================
@@ -102,6 +94,10 @@ builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<DirectoryService>();
 builder.Services.AddScoped<PostService>();
 
+// 🟢 NUEVOS SERVICIOS DE CONEXIÓN ONLINE
+builder.Services.AddScoped<IConnectionService, DbConnectionService>();
+builder.Services.AddHostedService<ConnectionCleanupService>();
+
 // Blob helper
 var blobConn = builder.Configuration.GetSection("AzureSettings")["BlobConnectionString"];
 if (string.IsNullOrWhiteSpace(blobConn))
@@ -128,7 +124,7 @@ builder.Services
     })
     .AddJwtBearer(options =>
     {
-        options.RequireHttpsMetadata = false; // dev
+        options.RequireHttpsMetadata = false;
         options.SaveToken = true;
         options.TokenValidationParameters = new TokenValidationParameters
         {
@@ -185,12 +181,11 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 // =============================
-// Forwarded headers (si estás detrás de proxy / nginx / Azure)
+// Forwarded headers
 // =============================
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
     options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
-    // En produccion especifica KnownProxies o KnownNetworks si es necesario.
 });
 
 var app = builder.Build();
@@ -198,35 +193,25 @@ var app = builder.Build();
 // =============================
 // Pipeline
 // =============================
-
-// 👇 Para ver errores claros en dev
 if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
 }
 else
 {
-    // HSTS para producción
     app.UseHsts();
 }
 
-// CORS (global)
 app.UseCors("AllowAll");
-
-// Forwarded headers (antes de otras middlewares que dependen del scheme/host)
 app.UseForwardedHeaders();
 
-// Compression + Caching
 app.UseResponseCompression();
 app.UseResponseCaching();
 
-// 👇 TEMPORALMENTE COMENTAMOS HTTPS PARA QUITAR DRAMA
 app.UseHttpsRedirection();
 
-// Static files - habilitar wwwroot y añadir headers específicos para avatars
-// Se añade OnPrepareResponse para agregar CORS header a recursos estáticos (útil para image cross-origin)
-app.UseStaticFiles(); // sirve wwwroot por defecto
-
+// Static files
+app.UseStaticFiles();
 app.UseStaticFiles(new StaticFileOptions
 {
     FileProvider = new PhysicalFileProvider(
@@ -241,26 +226,29 @@ app.UseStaticFiles(new StaticFileOptions
     }
 });
 
-// Authentication & Authorization
+// Auth
 app.UseAuthentication();
 app.UseAuthorization();
 
-// 👇 Swagger accesible directo en raíz: http://localhost:xxxx/
+// 🟢 NUEVO: Middleware para registrar actividad
+app.UseActivityTracking();
+
+// Swagger
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "UpsaMe API v1");
-    c.RoutePrefix = string.Empty; // Swagger en "/"
+    c.RoutePrefix = string.Empty;
 });
 
-// Health endpoint simple
+// Health
 app.MapGet("/health", () => Results.Ok(new { status = "ok", now = DateTime.UtcNow })).AllowAnonymous();
 
 // Controllers
 app.MapControllers();
 
 // =============================
-// Seed (igual que antes, pero solo loguea)
+// Seed
 // =============================
 using (var scope = app.Services.CreateScope())
 {
