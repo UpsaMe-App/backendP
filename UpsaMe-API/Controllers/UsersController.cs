@@ -9,7 +9,7 @@ namespace UpsaMe_API.Controllers
 {
     [ApiController]
     [Route("users")]
-    [Authorize] // 👈 por defecto todos necesitan auth, salvo donde pongamos [AllowAnonymous]
+    [Authorize]
     public class UsersController : ControllerBase
     {
         private readonly UserService _userService;
@@ -38,11 +38,9 @@ namespace UpsaMe_API.Controllers
             return Ok(user);
         }
 
-        /// <summary>
-        /// Perfil público por Id (para cuando clickean el nombre en un post).
-        /// </summary>
+        /// <summary>Perfil público por Id.</summary>
         [HttpGet("{id:guid}")]
-        [AllowAnonymous] // 👈 cualquiera puede ver el perfil público
+        [AllowAnonymous]
         [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetPublicProfile(Guid id)
@@ -54,24 +52,28 @@ namespace UpsaMe_API.Controllers
             return Ok(user);
         }
 
-        // AVATARS: ruta renombrada para evitar conflicto con otro controlador que expone GET users/avatars
-        /// <summary>
-        /// Opciones públicas de avatar (lista de ids/nombres/urls del catálogo).
-        /// Ruta: GET users/avatars/options
-        /// </summary>
+        /// 🔥 NUEVO ENDPOINT: Estado de conexión de un usuario
+        [HttpGet("{id:guid}/online-status")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetOnlineStatus(
+            Guid id,
+            [FromServices] IConnectionService connectionService)
+        {
+            var online = await connectionService.IsOnlineAsync(id);
+            return Ok(new { userId = id, online });
+        }
+
+        // AVATARS
         [HttpGet("avatars/options")]
         [AllowAnonymous]
-        [ProducesResponseType(StatusCodes.Status200OK)]
         public IActionResult GetAvatarOptions()
         {
             return Ok(AvatarCatalog.GetAll());
         }
 
-        /// <summary>
-        /// Actualiza el perfil del usuario autenticado (nombre, teléfono, semestre, foto).
-        /// </summary>
+        /// <summary>Actualizar perfil del usuario autenticado.</summary>
         [HttpPut("me")]
-        [RequestSizeLimit(10_000_000)] // 10MB para la foto
+        [RequestSizeLimit(10_000_000)]
         [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> UpdateProfile([FromForm] UpdateProfileDto dto)

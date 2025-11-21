@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.IdentityModel.Tokens.Jwt;
 using UpsaMe_API.DTOs.Auth;
 using UpsaMe_API.Services;
 
@@ -10,10 +11,12 @@ namespace UpsaMe_API.Controllers
     public class AuthController : ControllerBase
     {
         private readonly AuthService _authService;
+        private readonly IConnectionService _connectionService;
 
-        public AuthController(AuthService authService)
+        public AuthController(AuthService authService, IConnectionService connectionService)
         {
             _authService = authService;
+            _connectionService = connectionService;
         }
 
         /// <summary>Registro de usuario UPSA.</summary>
@@ -28,6 +31,12 @@ namespace UpsaMe_API.Controllers
             try
             {
                 var tokens = await _authService.RegisterAsync(dto);
+
+                // EXTRAER userId desde accessToken
+                var userId = ExtractUserIdFromToken(tokens.AccessToken);
+                if (userId != Guid.Empty)
+                    await _connectionService.RegisterConnectionAsync(userId);
+
                 return Ok(tokens);
             }
             catch (Exception ex)
@@ -51,6 +60,12 @@ namespace UpsaMe_API.Controllers
             try
             {
                 var tokens = await _authService.LoginAsync(dto);
+
+                // EXTRAER userId desde accessToken
+                var userId = ExtractUserIdFromToken(tokens.AccessToken);
+                if (userId != Guid.Empty)
+                    await _connectionService.RegisterConnectionAsync(userId);
+
                 return Ok(tokens);
             }
             catch (Exception ex)
@@ -74,6 +89,12 @@ namespace UpsaMe_API.Controllers
             try
             {
                 var tokens = await _authService.RefreshTokenAsync(body.RefreshToken);
+
+                // EXTRAER userId desde accessToken
+                var userId = ExtractUserIdFromToken(tokens.AccessToken);
+                if (userId != Guid.Empty)
+                    await _connectionService.UpdateActivityAsync(userId);
+
                 return Ok(tokens);
             }
             catch (Exception ex)
@@ -84,9 +105,26 @@ namespace UpsaMe_API.Controllers
                     statusCode: StatusCodes.Status400BadRequest);
             }
         }
+
+        // ============================================================
+        //          MÉTODO PRIVADO: Extraer UserId del JWT
+        // ============================================================
+        private Guid ExtractUserIdFromToken(string jwt)
+        {
+            var handler = new JwtSecurityTokenHandler();
+            if (!handler.CanReadToken(jwt))
+                return Guid.Empty;
+
+            var token = handler.ReadJwtToken(jwt);
+
+            var sub = token.Claims.FirstOrDefault(c => c.Type == "sub")?.Value;
+            if (Guid.TryParse(sub, out var userId))
+                return userId;
+
+            return Guid.Empty;
+        }
     }
 
-    /// <summary>Body para /auth/refresh.</summary>
     public sealed class RefreshTokenRequestDto
     {
         public string RefreshToken { get; set; } = string.Empty;
