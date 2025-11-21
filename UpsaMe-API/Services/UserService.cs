@@ -36,7 +36,9 @@ namespace UpsaMe_API.Services
                 CareerId = user.CareerId,
                 Career = user.Career?.Name,
                 Semester = user.Semester,
-                ProfilePhotoUrl = user.ProfilePhotoUrl
+                ProfilePhotoUrl = user.ProfilePhotoUrl,
+                Phone = user.Phone
+
             };
         }
 
