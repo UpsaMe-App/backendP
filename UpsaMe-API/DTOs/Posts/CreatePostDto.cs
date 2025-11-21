@@ -1,29 +1,44 @@
-﻿namespace UpsaMe_API.DTOs.Posts
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace UpsaMe_API.DTOs.Posts
 {
-    public class CreatePostDto
+    // 🧙‍♂️ Crear post de AYUDANTE
+    public class CreateHelperPostDto
     {
-        // 1=Helper, 2=Student, 3=Comment
-        public UpsaMe_API.Models.PostRole Role { get; set; }
+        [Required] [MaxLength(200)] public string Title { get; set; } = string.Empty;
 
-        // Helper: Objetivo de la ayudantía
-        // Student: opcional
-        public string? Title { get; set; }
+        [Required] [MaxLength(3000)] public string Content { get; set; } = string.Empty;
 
-        // Helper: descripción / contenido
-        // Student: puede ser una explicación extra
-        public string Content { get; set; } = string.Empty;
+        [Required] public Guid SubjectId { get; set; }
 
-        // Materia (rol Helper y Student)
-        public Guid? SubjectId { get; set; }
+        // Capacidad actual de cupos disponibles
+        [Range(1, int.MaxValue, ErrorMessage = "Capacity debe ser >= 1.")]
+        public int Capacity { get; set; }
 
-        // Helper: capacidad máxima
-        // Student: cantidad de personas que quiere en la sesión
-        public int? Capacity { get; set; }
+        // Capacidad máxima de personas
+        [Range(1, int.MaxValue, ErrorMessage = "MaxCapacity debe ser >= 1.")]
+        public int MaxCapacity { get; set; }
 
-        // Helper: nombre del docente
-        public string? TeacherName { get; set; }
-
-        // Student: Temas
-        public string[]? Topics { get; set; }
+        // Disponibilidad de horario (Calendly)
+        [Required] [MaxLength(500)] public string CalendlyUrl { get; set; } = string.Empty;
     }
-}
+
+    // 🎓 Crear post de ESTUDIANTE
+    public class CreateStudentPostDto
+    {
+        [Required] [MaxLength(200)] public string Title { get; set; } = string.Empty;
+
+        [Required] [MaxLength(3000)] public string Content { get; set; } = string.Empty;
+
+        [Required] public Guid SubjectId { get; set; }
+    }
+
+    // 💬 Crear post de COMENTARIO
+    public class CreateCommentPostDto
+    {
+        [Required] [MaxLength(200)] public string Title { get; set; } = string.Empty;
+
+        [Required] [MaxLength(3000)] public string Content { get; set; } = string.Empty;
+    }
+
+} 

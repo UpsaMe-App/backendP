@@ -22,579 +22,330 @@ namespace UpsaMe_API.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            // ========== CalendlyEvent ==========
             modelBuilder.Entity("UpsaMe_API.Models.CalendlyEvent", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+            {
+                b.Property<int>("Id")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime>("EndUtc")
-                        .HasColumnType("datetime2");
+                b.Property<DateTime>("EndUtc").HasColumnType("datetime2");
+                b.Property<string>("EventUri").IsRequired().HasMaxLength(450).HasColumnType("nvarchar(450)");
+                b.Property<string>("InviteeUri").HasColumnType("nvarchar(max)");
+                b.Property<string>("RawJson").HasColumnType("nvarchar(max)");
+                b.Property<DateTime>("StartUtc").HasColumnType("datetime2");
+                b.Property<string>("Status").HasMaxLength(100).HasColumnType("nvarchar(100)");
 
-                    b.Property<string>("EventUri")
-                        .IsRequired()
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
+                b.HasKey("Id");
+                b.HasIndex("EventUri").IsUnique();
 
-                    b.Property<string>("InviteeUri")
-                        .HasColumnType("nvarchar(max)");
+                b.ToTable("CalendlyEvents");
+            });
 
-                    b.Property<string>("RawJson")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("StartUtc")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Status")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("EventUri")
-                        .IsUnique();
-
-                    b.ToTable("CalendlyEvents");
-                });
-
+            // ========== CalendlyEventType ==========
             modelBuilder.Entity("UpsaMe_API.Models.CalendlyEventType", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+            {
+                b.Property<int>("Id").ValueGeneratedOnAdd().HasColumnType("int");
+                SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                b.Property<bool>("Active").HasColumnType("bit");
+                b.Property<int>("DurationMin").HasColumnType("int");
+                b.Property<string>("EventTypeUri").IsRequired().HasMaxLength(450).HasColumnType("nvarchar(450)");
+                b.Property<string>("Name").HasMaxLength(200).HasColumnType("nvarchar(200)");
+                b.Property<DateTime>("SyncedAtUtc").HasColumnType("datetime2");
+                b.Property<Guid>("UserId").HasColumnType("uniqueidentifier");
 
-                    b.Property<bool>("Active")
-                        .HasColumnType("bit");
+                b.HasKey("Id");
+                b.HasIndex("EventTypeUri").IsUnique();
 
-                    b.Property<int>("DurationMin")
-                        .HasColumnType("int");
+                b.ToTable("CalendlyEventTypes");
+            });
 
-                    b.Property<string>("EventTypeUri")
-                        .IsRequired()
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("Name")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<DateTime>("SyncedAtUtc")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("EventTypeUri")
-                        .IsUnique();
-
-                    b.ToTable("CalendlyEventTypes");
-                });
-
+            // ========== Career ==========
             modelBuilder.Entity("UpsaMe_API.Models.Career", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+            {
+                b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uniqueidentifier");
+                b.Property<Guid>("FacultyId").HasColumnType("uniqueidentifier");
+                b.Property<string>("Name").IsRequired().HasMaxLength(150).HasColumnType("nvarchar(150)");
+                b.Property<string>("Slug").IsRequired().HasMaxLength(100).HasColumnType("nvarchar(100)");
 
-                    b.Property<Guid>("FacultyId")
-                        .HasColumnType("uniqueidentifier");
+                b.HasKey("Id");
+                b.HasIndex("FacultyId");
+                b.HasIndex("Slug").IsUnique();
 
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
+                b.ToTable("Careers");
+            });
 
-                    b.Property<string>("Slug")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("FacultyId");
-
-                    b.HasIndex("Slug")
-                        .IsUnique();
-
-                    b.ToTable("Careers");
-                });
-
+            // ========== Faculty ==========
             modelBuilder.Entity("UpsaMe_API.Models.Faculty", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+            {
+                b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uniqueidentifier");
+                b.Property<string>("Name").IsRequired().HasMaxLength(150).HasColumnType("nvarchar(150)");
+                b.Property<string>("Slug").IsRequired().HasMaxLength(100).HasColumnType("nvarchar(100)");
 
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
+                b.HasKey("Id");
+                b.HasIndex("Slug").IsUnique();
 
-                    b.Property<string>("Slug")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                b.ToTable("Faculties");
+            });
 
-                    b.HasKey("Id");
-
-                    b.HasIndex("Slug")
-                        .IsUnique();
-
-                    b.ToTable("Faculties");
-                });
-
+            // ========== Notification ==========
             modelBuilder.Entity("UpsaMe_API.Models.Notification", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+            {
+                b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uniqueidentifier");
+                b.Property<string>("Body").IsRequired().HasMaxLength(500).HasColumnType("nvarchar(500)");
+                b.Property<DateTime>("CreatedAtUtc").HasColumnType("datetime2");
+                b.Property<string>("DataJson").HasColumnType("nvarchar(max)");
+                b.Property<bool>("IsRead").HasColumnType("bit");
+                b.Property<string>("Title").IsRequired().HasMaxLength(120).HasColumnType("nvarchar(120)");
+                b.Property<int>("Type").HasColumnType("int");
+                b.Property<Guid>("UserId").HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("Body")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                b.HasKey("Id");
+                b.HasIndex("UserId", "IsRead");
 
-                    b.Property<DateTime>("CreatedAtUtc")
-                        .HasColumnType("datetime2");
+                b.ToTable("Notifications");
+            });
 
-                    b.Property<string>("DataJson")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("IsRead")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<int>("Type")
-                        .HasColumnType("int");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId", "IsRead", "CreatedAtUtc");
-
-                    b.ToTable("Notifications");
-                });
-
+            // ========== NotificationDevice ==========
             modelBuilder.Entity("UpsaMe_API.Models.NotificationDevice", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+            {
+                b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uniqueidentifier");
+                b.Property<DateTime>("CreatedAtUtc").HasColumnType("datetime2");
+                b.Property<string>("DeviceId").IsRequired().HasMaxLength(200).HasColumnType("nvarchar(200)");
+                b.Property<DateTime?>("LastSeenAtUtc").HasColumnType("datetime2");
+                b.Property<string>("Provider").IsRequired().HasMaxLength(50).HasColumnType("nvarchar(50)");
+                b.Property<string>("PushToken").HasMaxLength(500).HasColumnType("nvarchar(500)");
+                b.Property<Guid>("UserId").HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTime>("CreatedAtUtc")
-                        .HasColumnType("datetime2");
+                b.HasKey("Id");
 
-                    b.Property<string>("DeviceId")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
+                b.ToTable("NotificationDevices");
+            });
 
-                    b.Property<DateTime?>("LastSeenAtUtc")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Provider")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("PushToken")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("DeviceId")
-                        .IsUnique();
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("NotificationDevices");
-                });
-
+            // ========== Post ==========
             modelBuilder.Entity("UpsaMe_API.Models.Post", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+            {
+                b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uniqueidentifier");
+                b.Property<string>("CalendlyUrl").HasMaxLength(500).HasColumnType("nvarchar(500)");
+                b.Property<int?>("Capacity").HasColumnType("int");
+                b.Property<int>("CapacityUsed").HasColumnType("int");
+                b.Property<string>("Content").IsRequired().HasMaxLength(3000).HasColumnType("nvarchar(3000)");
+                b.Property<DateTime>("CreatedAtUtc").HasColumnType("datetime2");
+                b.Property<int?>("MaxCapacity").HasColumnType("int");
+                b.Property<int>("Role").HasColumnType("int");
+                b.Property<int>("Status").HasColumnType("int");
+                b.Property<Guid?>("SubjectId").HasColumnType("uniqueidentifier");
+                b.Property<string>("Title").IsRequired().HasMaxLength(200).HasColumnType("nvarchar(200)");
+                b.Property<DateTime?>("UpdatedAtUtc").HasColumnType("datetime2");
+                b.Property<Guid>("UserId").HasColumnType("uniqueidentifier");
 
-                    b.Property<int?>("Capacity")
-                        .HasColumnType("int");
+                b.HasKey("Id");
+                b.HasIndex("SubjectId");
+                b.HasIndex("UserId");
+                b.HasIndex("Role", "Status", "CreatedAtUtc");
 
-                    b.Property<int>("CapacityUsed")
-                        .HasColumnType("int");
+                b.ToTable("Posts");
+            });
 
-                    b.Property<string>("Content")
-                        .IsRequired()
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
-
-                    b.Property<DateTime>("CreatedAtUtc")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("Role")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
-
-                    b.Property<Guid?>("SubjectId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("TeacherName")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<string>("Title")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<string>("Topics")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<DateTime?>("UpdatedAtUtc")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("SubjectId", "Status");
-
-                    b.HasIndex("UserId", "Status");
-
-                    b.HasIndex("Role", "Status", "CreatedAtUtc");
-
-                    b.ToTable("Posts");
-                });
-
+            // ========== PostReply ==========
             modelBuilder.Entity("UpsaMe_API.Models.PostReply", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+            {
+                b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uniqueidentifier");
+                b.Property<string>("Content").IsRequired().HasColumnType("nvarchar(max)");
+                b.Property<DateTime>("CreatedAtUtc").HasColumnType("datetime2");
+                b.Property<Guid>("PostId").HasColumnType("uniqueidentifier");
+                b.Property<Guid>("UserId").HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("Content")
-                        .IsRequired()
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
+                b.HasKey("Id");
+                b.HasIndex("PostId");
+                b.HasIndex("UserId");
 
-                    b.Property<DateTime>("CreatedAtUtc")
-                        .HasColumnType("datetime2");
+                b.ToTable("PostReplies");
+            });
 
-                    b.Property<Guid>("PostId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("PostId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("PostReplies");
-                });
-
+            // ========== Session ==========
             modelBuilder.Entity("UpsaMe_API.Models.Session", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+            {
+                b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uniqueidentifier");
+                b.Property<DateTime>("CreatedAtUtc").HasColumnType("datetime2");
+                b.Property<string>("DealId").HasColumnType("nvarchar(max)");
+                b.Property<DateTime>("EndsAtUtc").HasColumnType("datetime2");
+                b.Property<string>("InviteeEmail").IsRequired().HasColumnType("nvarchar(max)");
+                b.Property<string>("MeetingUrl").HasColumnType("nvarchar(max)");
+                b.Property<Guid>("MentorUserId").HasColumnType("uniqueidentifier");
+                b.Property<DateTime>("StartsAtUtc").HasColumnType("datetime2");
+                b.Property<int>("Status").HasColumnType("int");
+                b.Property<DateTime?>("UpdatedAtUtc").HasColumnType("datetime2");
 
-                    b.Property<string>("CalendlyEventUri")
-                        .HasColumnType("nvarchar(max)");
+                b.HasKey("Id");
+                b.HasIndex("MentorUserId");
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                b.ToTable("Sessions");
+            });
 
-                    b.Property<DateTime>("ScheduledAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("Sessions");
-                });
-
+            // ========== Subject ==========
             modelBuilder.Entity("UpsaMe_API.Models.Subject", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+            {
+                b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uniqueidentifier");
+                b.Property<Guid>("CareerId").HasColumnType("uniqueidentifier");
+                b.Property<string>("Code").HasMaxLength(20).HasColumnType("nvarchar(20)");
+                b.Property<string>("Name").IsRequired().HasMaxLength(150).HasColumnType("nvarchar(150)");
+                b.Property<string>("Slug").HasMaxLength(100).HasColumnType("nvarchar(100)");
 
-                    b.Property<Guid>("CareerId")
-                        .HasColumnType("uniqueidentifier");
+                b.HasKey("Id");
+                b.HasIndex("CareerId");
+                b.HasIndex("Slug");
 
-                    b.Property<string>("Code")
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
+                b.ToTable("Subjects");
+            });
 
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<string>("Slug")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CareerId");
-
-                    b.HasIndex("Slug");
-
-                    b.ToTable("Subjects");
-                });
-
+            // ========== User ==========
             modelBuilder.Entity("UpsaMe_API.Models.User", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+            {
+                b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uniqueidentifier");
+                b.Property<Guid?>("CareerId").HasColumnType("uniqueidentifier");
+                b.Property<string>("Email").IsRequired().HasMaxLength(100).HasColumnType("nvarchar(100)");
+                b.Property<string>("FirstName").IsRequired().HasMaxLength(50).HasColumnType("nvarchar(50)");
+                b.Property<string>("LastName").IsRequired().HasMaxLength(50).HasColumnType("nvarchar(50)");
+                b.Property<string>("PasswordHash").IsRequired().HasMaxLength(255).HasColumnType("nvarchar(255)");
+                b.Property<string>("Phone").HasMaxLength(20).HasColumnType("nvarchar(20)");
+                b.Property<string>("ProfilePhotoUrl").HasColumnType("nvarchar(max)");
+                b.Property<string>("RefreshToken").HasColumnType("nvarchar(max)");
+                b.Property<DateTime?>("RefreshTokenExpiresAtUtc").HasColumnType("datetime2");
+                b.Property<int?>("Semester").HasColumnType("int");
+                b.Property<string>("Timezone").HasMaxLength(50).HasColumnType("nvarchar(50)");
 
-                    b.Property<Guid?>("CareerId")
-                        .HasColumnType("uniqueidentifier");
+                b.HasKey("Id");
+                b.HasIndex("CareerId");
+                b.HasIndex("Email").IsUnique();
 
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                b.ToTable("Users");
+            });
 
-                    b.Property<string>("FirstName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("LastName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("PasswordHash")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<string>("Phone")
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.Property<string>("ProfilePhotoUrl")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("RefreshToken")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("RefreshTokenExpiresAtUtc")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int?>("Semester")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Timezone")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CareerId");
-
-                    b.HasIndex("Email")
-                        .IsUnique();
-
-                    b.ToTable("Users");
-                });
-
-<<<<<<< HEAD
-            modelBuilder.Entity("UpsaMe_API.Models.WebHookLog", b =>
-=======
+            // ========== UserConnection ==========
             modelBuilder.Entity("UpsaMe_API.Models.UserConnection", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+            {
+                b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uniqueidentifier");
+                b.Property<DateTime>("ConnectedAtUtc").HasColumnType("datetime2");
+                b.Property<DateTime>("LastActivityUtc").HasColumnType("datetime2");
+                b.Property<Guid>("UserId").HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTime>("ConnectedAtUtc")
-                        .HasColumnType("datetime2");
+                b.HasKey("Id");
+                b.HasIndex("UserId").IsUnique();
 
-                    b.Property<DateTime>("LastActivityUtc")
-                        .HasColumnType("datetime2");
+                b.ToTable("UserConnections");
+            });
 
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId")
-                        .IsUnique();
-
-                    b.ToTable("UserConnections");
-                });
-
+            // ========== WebhookLog ==========
             modelBuilder.Entity("UpsaMe_API.Models.WebhookLog", b =>
->>>>>>> abc6509 (Implementado sistema UserConnection y online-status)
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+            {
+                b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uniqueidentifier");
+                b.Property<string>("Payload").IsRequired().HasColumnType("nvarchar(max)");
+                b.Property<DateTime>("ReceivedAtUtc").HasColumnType("datetime2");
+                b.Property<string>("Source").IsRequired().HasMaxLength(100).HasColumnType("nvarchar(100)");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                b.HasKey("Id");
+                b.ToTable("WebhookLogs");
+            });
 
-                    b.Property<string>("EventType")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Payload")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("ReceivedAt")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("WebHookLogs");
-                });
-
+            // ========== RELACIONES ==========
             modelBuilder.Entity("UpsaMe_API.Models.Career", b =>
-                {
-                    b.HasOne("UpsaMe_API.Models.Faculty", "Faculty")
-                        .WithMany("Careers")
-                        .HasForeignKey("FacultyId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+            {
+                b.HasOne("UpsaMe_API.Models.Faculty", "Faculty")
+                    .WithMany("Careers")
+                    .HasForeignKey("FacultyId")
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .IsRequired();
 
-                    b.Navigation("Faculty");
-                });
-
-            modelBuilder.Entity("UpsaMe_API.Models.Notification", b =>
-                {
-                    b.HasOne("UpsaMe_API.Models.User", null)
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("UpsaMe_API.Models.NotificationDevice", b =>
-                {
-                    b.HasOne("UpsaMe_API.Models.User", null)
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
+                b.Navigation("Faculty");
+            });
 
             modelBuilder.Entity("UpsaMe_API.Models.Post", b =>
-                {
-                    b.HasOne("UpsaMe_API.Models.Subject", "Subject")
-                        .WithMany()
-                        .HasForeignKey("SubjectId")
-                        .OnDelete(DeleteBehavior.SetNull);
+            {
+                b.HasOne("UpsaMe_API.Models.Subject", "Subject")
+                    .WithMany()
+                    .HasForeignKey("SubjectId")
+                    .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("UpsaMe_API.Models.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                b.HasOne("UpsaMe_API.Models.User", "User")
+                    .WithMany()
+                    .HasForeignKey("UserId")
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .IsRequired();
 
-                    b.Navigation("Subject");
-
-                    b.Navigation("User");
-                });
+                b.Navigation("Subject");
+                b.Navigation("User");
+            });
 
             modelBuilder.Entity("UpsaMe_API.Models.PostReply", b =>
-                {
-                    b.HasOne("UpsaMe_API.Models.Post", "Post")
-                        .WithMany("Replies")
-                        .HasForeignKey("PostId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+            {
+                b.HasOne("UpsaMe_API.Models.Post", "Post")
+                    .WithMany("Replies")
+                    .HasForeignKey("PostId")
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .IsRequired();
 
-                    b.HasOne("UpsaMe_API.Models.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                b.HasOne("UpsaMe_API.Models.User", "User")
+                    .WithMany()
+                    .HasForeignKey("UserId")
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .IsRequired();
 
-                    b.Navigation("Post");
-
-                    b.Navigation("User");
-                });
+                b.Navigation("Post");
+                b.Navigation("User");
+            });
 
             modelBuilder.Entity("UpsaMe_API.Models.Session", b =>
-                {
-                    b.HasOne("UpsaMe_API.Models.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+            {
+                b.HasOne("UpsaMe_API.Models.User", "Mentoruser")
+                    .WithMany()
+                    .HasForeignKey("MentorUserId")
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .IsRequired();
 
-                    b.Navigation("User");
-                });
+                b.Navigation("Mentoruser");
+            });
 
             modelBuilder.Entity("UpsaMe_API.Models.Subject", b =>
-                {
-                    b.HasOne("UpsaMe_API.Models.Career", "Career")
-                        .WithMany("Subjects")
-                        .HasForeignKey("CareerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+            {
+                b.HasOne("UpsaMe_API.Models.Career", "Career")
+                    .WithMany("Subjects")
+                    .HasForeignKey("CareerId")
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .IsRequired();
 
-                    b.Navigation("Career");
-                });
+                b.Navigation("Career");
+            });
 
             modelBuilder.Entity("UpsaMe_API.Models.User", b =>
-                {
-                    b.HasOne("UpsaMe_API.Models.Career", "Career")
-                        .WithMany("Users")
-                        .HasForeignKey("CareerId")
-                        .OnDelete(DeleteBehavior.SetNull);
+            {
+                b.HasOne("UpsaMe_API.Models.Career", "Career")
+                    .WithMany("Users")
+                    .HasForeignKey("CareerId")
+                    .OnDelete(DeleteBehavior.SetNull);
 
-                    b.Navigation("Career");
-                });
+                b.Navigation("Career");
+            });
 
             modelBuilder.Entity("UpsaMe_API.Models.Career", b =>
-                {
-                    b.Navigation("Subjects");
-
-                    b.Navigation("Users");
-                });
+            {
+                b.Navigation("Subjects");
+                b.Navigation("Users");
+            });
 
             modelBuilder.Entity("UpsaMe_API.Models.Faculty", b =>
-                {
-                    b.Navigation("Careers");
-                });
+            {
+                b.Navigation("Careers");
+            });
 
             modelBuilder.Entity("UpsaMe_API.Models.Post", b =>
-                {
-                    b.Navigation("Replies");
-                });
+            {
+                b.Navigation("Replies");
+            });
+
 #pragma warning restore 612, 618
         }
     }

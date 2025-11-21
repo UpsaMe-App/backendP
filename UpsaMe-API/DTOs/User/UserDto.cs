@@ -14,5 +14,6 @@
         public int? Semester { get; set; }
 
         public string? ProfilePhotoUrl { get; set; }
+        public string? Phone { get; set; }
     }
 }

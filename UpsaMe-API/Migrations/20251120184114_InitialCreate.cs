@@ -52,7 +52,7 @@ namespace UpsaMe_API.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false),
                     Slug = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false)
                 },
                 constraints: table =>
@@ -61,18 +61,52 @@ namespace UpsaMe_API.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "WebHookLogs",
+                name: "NotificationDevices",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    EventType = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Payload = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    ReceivedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Provider = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    DeviceId = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    PushToken = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    CreatedAtUtc = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    LastSeenAtUtc = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_WebHookLogs", x => x.Id);
+                    table.PrimaryKey("PK_NotificationDevices", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Notifications",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Type = table.Column<int>(type: "int", nullable: false),
+                    Title = table.Column<string>(type: "nvarchar(120)", maxLength: 120, nullable: false),
+                    Body = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
+                    DataJson = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    IsRead = table.Column<bool>(type: "bit", nullable: false),
+                    CreatedAtUtc = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Notifications", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "WebhookLogs",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Source = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Payload = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ReceivedAtUtc = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_WebhookLogs", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -80,7 +114,7 @@ namespace UpsaMe_API.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false),
                     Slug = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     FacultyId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
                 },
@@ -100,7 +134,7 @@ namespace UpsaMe_API.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false),
                     Code = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
                     Slug = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
                     CareerId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
@@ -121,9 +155,9 @@ namespace UpsaMe_API.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Email = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: false),
-                    FirstName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    LastName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Email = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    FirstName = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    LastName = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     CareerId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     Semester = table.Column<int>(type: "int", nullable: true),
                     Phone = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
@@ -145,69 +179,22 @@ namespace UpsaMe_API.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "NotificationDevices",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Provider = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    DeviceId = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                    PushToken = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
-                    CreatedAtUtc = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    LastSeenAtUtc = table.Column<DateTime>(type: "datetime2", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_NotificationDevices", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_NotificationDevices_Users_UserId",
-                        column: x => x.UserId,
-                        principalTable: "Users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Notifications",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Type = table.Column<int>(type: "int", nullable: false),
-                    Title = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                    Body = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
-                    DataJson = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    IsRead = table.Column<bool>(type: "bit", nullable: false),
-                    CreatedAtUtc = table.Column<DateTime>(type: "datetime2", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Notifications", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Notifications_Users_UserId",
-                        column: x => x.UserId,
-                        principalTable: "Users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Posts",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Role = table.Column<int>(type: "int", nullable: false),
-                    Title = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
-                    Content = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: false),
+                    Title = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    Content = table.Column<string>(type: "nvarchar(3000)", maxLength: 3000, nullable: false),
                     SubjectId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     Capacity = table.Column<int>(type: "int", nullable: true),
+                    MaxCapacity = table.Column<int>(type: "int", nullable: true),
+                    CalendlyUrl = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     CapacityUsed = table.Column<int>(type: "int", nullable: false),
                     Status = table.Column<int>(type: "int", nullable: false),
                     CreatedAtUtc = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedAtUtc = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    TeacherName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
-                    Topics = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true)
+                    UpdatedAtUtc = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -231,21 +218,25 @@ namespace UpsaMe_API.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    CalendlyEventUri = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    MentorUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    InviteeEmail = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    StartsAtUtc = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    EndsAtUtc = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    MeetingUrl = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
-                    ScheduledAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    DealId = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    CreatedAtUtc = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAtUtc = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Sessions", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Sessions_Users_UserId",
-                        column: x => x.UserId,
+                        name: "FK_Sessions_Users_MentorUserId",
+                        column: x => x.MentorUserId,
                         principalTable: "Users",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -255,7 +246,7 @@ namespace UpsaMe_API.Migrations
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     PostId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Content = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: false),
+                    Content = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     CreatedAtUtc = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
@@ -305,20 +296,9 @@ namespace UpsaMe_API.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_NotificationDevices_DeviceId",
-                table: "NotificationDevices",
-                column: "DeviceId",
-                unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_NotificationDevices_UserId",
-                table: "NotificationDevices",
-                column: "UserId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Notifications_UserId_IsRead_CreatedAtUtc",
+                name: "IX_Notifications_UserId_IsRead",
                 table: "Notifications",
-                columns: new[] { "UserId", "IsRead", "CreatedAtUtc" });
+                columns: new[] { "UserId", "IsRead" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_PostReplies_PostId",
@@ -336,19 +316,19 @@ namespace UpsaMe_API.Migrations
                 columns: new[] { "Role", "Status", "CreatedAtUtc" });
 
             migrationBuilder.CreateIndex(
-                name: "IX_Posts_SubjectId_Status",
+                name: "IX_Posts_SubjectId",
                 table: "Posts",
-                columns: new[] { "SubjectId", "Status" });
+                column: "SubjectId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Posts_UserId_Status",
+                name: "IX_Posts_UserId",
                 table: "Posts",
-                columns: new[] { "UserId", "Status" });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Sessions_UserId",
-                table: "Sessions",
                 column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Sessions_MentorUserId",
+                table: "Sessions",
+                column: "MentorUserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Subjects_CareerId",
@@ -394,7 +374,7 @@ namespace UpsaMe_API.Migrations
                 name: "Sessions");
 
             migrationBuilder.DropTable(
-                name: "WebHookLogs");
+                name: "WebhookLogs");
 
             migrationBuilder.DropTable(
                 name: "Posts");

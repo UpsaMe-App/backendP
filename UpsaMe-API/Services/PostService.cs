@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using UpsaMe_API.Data;
+using UpsaMe_API.DTOs.Posts;
 using UpsaMe_API.Models;
 
 namespace UpsaMe_API.Services
@@ -44,11 +45,19 @@ namespace UpsaMe_API.Services
                     p.Title,
                     p.Content,
                     p.Capacity,
+                    p.MaxCapacity,
+                    p.CalendlyUrl,
                     p.CapacityUsed,
                     p.CreatedAtUtc,
-                    AuthorId = p.UserId, 
+
+                    // Para ir al perfil del autor desde el frontend
+                    AuthorId = p.UserId,
                     Author = p.User != null ? $"{p.User.FirstName} {p.User.LastName}" : "Anónimo",
+
+                    // Para mostrar la materia en la card
+                    SubjectId = p.SubjectId,
                     Subject = p.Subject != null ? p.Subject.Name : null,
+
                     RepliesCount = p.Replies != null ? p.Replies.Count : 0
                 })
                 .ToListAsync();
@@ -57,7 +66,7 @@ namespace UpsaMe_API.Services
         }
 
         // ============================================================
-        // 📌 2. CREAR POST
+        // 📌 2. CREAR POST (GENÉRICO - no se usa directo desde el controller)
         // ============================================================
         public async Task<Post> CreateAsync(Post post)
         {
@@ -67,50 +76,134 @@ namespace UpsaMe_API.Services
             if (string.IsNullOrWhiteSpace(post.Content))
                 throw new InvalidOperationException("El contenido no puede estar vacío.");
 
-            // Normalización
             post.Id = post.Id == Guid.Empty ? Guid.NewGuid() : post.Id;
             post.CreatedAtUtc = DateTime.UtcNow;
             post.UpdatedAtUtc = null;
             post.Status = PostStatus.Active;
             post.CapacityUsed = Math.Max(0, post.CapacityUsed);
 
-            // Reglas por rol
-            switch (post.Role)
+            _context.Posts.Add(post);
+            await _context.SaveChangesAsync();
+            return post;
+        }
+
+        // ============================================================
+        // 📌 2a. CREAR AYUDANTE
+        // ============================================================
+        public async Task<Post> CreateHelperAsync(Guid userId, CreateHelperPostDto dto)
+        {
+            if (dto.SubjectId == Guid.Empty)
+                throw new InvalidOperationException("SubjectId es obligatorio.");
+
+            var exists = await _context.Subjects
+                .AsNoTracking()
+                .AnyAsync(s => s.Id == dto.SubjectId);
+
+            if (!exists)
+                throw new InvalidOperationException("La materia (SubjectId) no existe.");
+
+            if (dto.Capacity < 1)
+                throw new InvalidOperationException("Capacity debe ser >= 1.");
+            if (dto.MaxCapacity < 1)
+                throw new InvalidOperationException("MaxCapacity debe ser >= 1.");
+            if (dto.Capacity > dto.MaxCapacity)
+                throw new InvalidOperationException("Capacity no puede superar MaxCapacity.");
+
+            if (string.IsNullOrWhiteSpace(dto.Title))
+                throw new InvalidOperationException("El título es obligatorio.");
+            if (string.IsNullOrWhiteSpace(dto.Content))
+                throw new InvalidOperationException("El contenido es obligatorio.");
+            if (string.IsNullOrWhiteSpace(dto.CalendlyUrl))
+                throw new InvalidOperationException("CalendlyUrl es obligatorio.");
+
+            var post = new Post
             {
-                case PostRole.Helper:
-                    if (post.Capacity.HasValue && post.Capacity.Value < 1)
-                        throw new InvalidOperationException("Capacity debe ser >= 1 para posts de Ayudante.");
-                    if (!post.SubjectId.HasValue)
-                        throw new InvalidOperationException("SubjectId es obligatorio para posts de Ayudante.");
-                    break;
+                Id = Guid.NewGuid(),
+                UserId = userId,
+                Role = PostRole.Helper,
+                Title = dto.Title.Trim(),
+                Content = dto.Content.Trim(),
+                SubjectId = dto.SubjectId,
+                Capacity = dto.Capacity,
+                MaxCapacity = dto.MaxCapacity,
+                CalendlyUrl = dto.CalendlyUrl.Trim(),
+                Status = PostStatus.Active,
+                CapacityUsed = 0,
+                CreatedAtUtc = DateTime.UtcNow
+            };
 
-                case PostRole.Student:
-                    if (!post.SubjectId.HasValue)
-                        throw new InvalidOperationException("SubjectId es obligatorio para posts de Estudiante.");
-                    if (!post.Capacity.HasValue || post.Capacity.Value < 1)
-                        throw new InvalidOperationException("Capacity debe ser >= 1 para posts de Estudiante.");
-                    break;
+            _context.Posts.Add(post);
+            await _context.SaveChangesAsync();
+            return post;
+        }
 
-                case PostRole.Comment:
-                    post.Capacity = null;
-                    post.CapacityUsed = 0;
-                    post.SubjectId = null;
-                    break;
+        // ============================================================
+        // 📌 2b. CREAR ESTUDIANTE
+        // ============================================================
+        public async Task<Post> CreateStudentAsync(Guid userId, CreateStudentPostDto dto)
+        {
+            if (dto.SubjectId == Guid.Empty)
+                throw new InvalidOperationException("SubjectId es obligatorio.");
 
-                default:
-                    throw new InvalidOperationException("Role inválido.");
-            }
+            var exists = await _context.Subjects
+                .AsNoTracking()
+                .AnyAsync(s => s.Id == dto.SubjectId);
 
-            // Verificar SUBJECT existe
-            if (post.SubjectId.HasValue)
+            if (!exists)
+                throw new InvalidOperationException("La materia (SubjectId) no existe.");
+
+            if (string.IsNullOrWhiteSpace(dto.Title))
+                throw new InvalidOperationException("El título es obligatorio.");
+            if (string.IsNullOrWhiteSpace(dto.Content))
+                throw new InvalidOperationException("El contenido es obligatorio.");
+
+            var post = new Post
             {
-                var exists = await _context.Subjects
-                    .AsNoTracking()
-                    .AnyAsync(s => s.Id == post.SubjectId.Value);
+                Id = Guid.NewGuid(),
+                UserId = userId,
+                Role = PostRole.Student,
+                Title = dto.Title.Trim(),
+                Content = dto.Content.Trim(),
+                SubjectId = dto.SubjectId,
+                Status = PostStatus.Active,
+                Capacity = null,
+                MaxCapacity = null,
+                CalendlyUrl = null,
+                CapacityUsed = 0,
+                CreatedAtUtc = DateTime.UtcNow
+            };
 
-                if (!exists)
-                    throw new InvalidOperationException("La materia (SubjectId) no existe.");
-            }
+            _context.Posts.Add(post);
+            await _context.SaveChangesAsync();
+            return post;
+        }
+
+        // ============================================================
+        // 📌 2c. CREAR COMENTARIO
+        // ============================================================
+        public async Task<Post> CreateCommentAsync(Guid userId, CreateCommentPostDto dto)
+        {
+            if (string.IsNullOrWhiteSpace(dto.Title))
+                throw new InvalidOperationException("El título es obligatorio.");
+
+            if (string.IsNullOrWhiteSpace(dto.Content))
+                throw new InvalidOperationException("El contenido es obligatorio.");
+
+            var post = new Post
+            {
+                Id = Guid.NewGuid(),
+                UserId = userId,
+                Role = PostRole.Comment,
+                Title = dto.Title.Trim(),
+                Content = dto.Content.Trim(),
+                SubjectId = null,
+                Status = PostStatus.Active,
+                Capacity = null,
+                MaxCapacity = null,
+                CalendlyUrl = null,
+                CapacityUsed = 0,
+                CreatedAtUtc = DateTime.UtcNow
+            };
 
             _context.Posts.Add(post);
             await _context.SaveChangesAsync();
@@ -132,10 +225,10 @@ namespace UpsaMe_API.Services
                 .Where(p => p.Id == postId && p.Status != PostStatus.Deleted)
                 .FirstOrDefaultAsync();
 
-            if (post == null)
+            if (post == null) //..
                 return null;
 
-            reply.Id = reply.Id == Guid.Empty ? Guid.NewGuid() : reply.Id;
+            reply.Id = Guid.NewGuid();
             reply.PostId = postId;
             reply.CreatedAtUtc = DateTime.UtcNow;
 
@@ -144,9 +237,30 @@ namespace UpsaMe_API.Services
 
             return reply;
         }
+// ============================================================
+// 📌 3b. OBTENER REPLIES DE UN POST
+// ============================================================
+        public async Task<List<object>> GetRepliesForPostAsync(Guid postId)
+        {
+            var replies = await _context.PostReplies
+                .AsNoTracking()
+                .Include(r => r.User)
+                .Where(r => r.PostId == postId)
+                .OrderBy(r => r.CreatedAtUtc)
+                .Select(r => new
+                {
+                    r.Id,
+                    r.Content,
+                    r.CreatedAtUtc,
+                    AuthorId = r.UserId,
+                    Author = r.User != null ? $"{r.User.FirstName} {r.User.LastName}" : "Anónimo"
+                })
+                .ToListAsync();
 
+            return replies.Cast<object>().ToList();
+        }
         // ============================================================
-        // 📌 4. BUSCAR POSTS POR MATERIA (search del frontend)
+        // 📌 4. BUSCAR POSTS POR MATERIA
         // ============================================================
         public async Task<List<object>> SearchPostsBySubjectAsync(string query, int page = 1, int pageSize = 10)
         {
@@ -158,7 +272,6 @@ namespace UpsaMe_API.Services
 
             var q = query.Trim().ToLower();
 
-            // 1) Buscar materias relacionadas
             var subjectIds = await _context.Subjects
                 .AsNoTracking()
                 .Where(s =>
@@ -171,7 +284,6 @@ namespace UpsaMe_API.Services
             if (!subjectIds.Any())
                 return new List<object>();
 
-            // 2) Buscar posts relacionados a esas materias
             var queryPosts = _context.Posts
                 .AsNoTracking()
                 .Include(p => p.User)
@@ -193,6 +305,8 @@ namespace UpsaMe_API.Services
                     p.Title,
                     p.Content,
                     p.Capacity,
+                    p.MaxCapacity,
+                    p.CalendlyUrl,
                     p.CapacityUsed,
                     p.CreatedAtUtc,
                     AuthorId = p.UserId,
@@ -204,6 +318,57 @@ namespace UpsaMe_API.Services
 
             return rows.Cast<object>().ToList();
         }
-    }
-}
 
+        // ============================================================
+        // 📌 5. EDITAR POST (solo dueño)
+        // ============================================================
+        public async Task<Post?> UpdateAsync(Guid postId, Guid userId, UpdatePostDto dto)
+        {
+            var post = await _context.Posts
+                .FirstOrDefaultAsync(p => p.Id == postId && p.UserId == userId && p.Status != PostStatus.Deleted);
+
+            if (post == null)
+                return null;
+
+            if (!string.IsNullOrWhiteSpace(dto.Title))
+                post.Title = dto.Title.Trim();
+
+            if (!string.IsNullOrWhiteSpace(dto.Content))
+                post.Content = dto.Content.Trim();
+
+            post.UpdatedAtUtc = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+            return post;
+        }
+
+        // ============================================================
+        // 📌 6. ELIMINAR POST (soft delete, solo dueño)
+        // ============================================================
+        public async Task<bool> DeleteAsync(Guid postId, Guid userId)
+        {
+            var post = await _context.Posts
+                .FirstOrDefaultAsync(p => p.Id == postId && p.UserId == userId && p.Status != PostStatus.Deleted);
+
+            if (post == null)
+                return false;
+
+            post.Status = PostStatus.Deleted;
+            post.UpdatedAtUtc = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        // ============================================================
+        // 📌 7. POSTS DE UN USUARIO (para "Mis posts")
+        // ============================================================
+        public async Task<List<Post>> GetByUserAsync(Guid userId)
+        {
+            return await _context.Posts
+                .Where(p => p.UserId == userId && p.Status != PostStatus.Deleted)
+                .OrderByDescending(p => p.CreatedAtUtc)
+                .ToListAsync();
+        }
+    }
+}                 

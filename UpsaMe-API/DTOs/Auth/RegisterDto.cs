@@ -18,10 +18,15 @@ namespace UpsaMe_API.DTOs.Auth
         [Required(ErrorMessage = "El apellido es obligatorio.")]
         public string LastName { get; set; } = string.Empty;
 
-        // 🔹 Ahora por Id
+        // 🔹 Id de carrera
         public Guid? CareerId { get; set; }
 
-        [Range(1, 10, ErrorMessage = "El semestre debe estar entre 1 y 12.")]
+        [Range(1, 12, ErrorMessage = "El semestre debe estar entre 1 y 12.")]
         public int? Semester { get; set; }
+
+        // 🔹 Teléfono
+        [Phone(ErrorMessage = "El número de teléfono no es válido.")]
+        [Required(ErrorMessage = "El número de teléfono es obligatorio.")]
+        public string Phone { get; set; } = string.Empty;
     }
 }
