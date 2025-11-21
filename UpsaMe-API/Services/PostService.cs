@@ -237,7 +237,28 @@ namespace UpsaMe_API.Services
 
             return reply;
         }
+// ============================================================
+// 📌 3b. OBTENER REPLIES DE UN POST
+// ============================================================
+        public async Task<List<object>> GetRepliesForPostAsync(Guid postId)
+        {
+            var replies = await _context.PostReplies
+                .AsNoTracking()
+                .Include(r => r.User)
+                .Where(r => r.PostId == postId)
+                .OrderBy(r => r.CreatedAtUtc)
+                .Select(r => new
+                {
+                    r.Id,
+                    r.Content,
+                    r.CreatedAtUtc,
+                    AuthorId = r.UserId,
+                    Author = r.User != null ? $"{r.User.FirstName} {r.User.LastName}" : "Anónimo"
+                })
+                .ToListAsync();
 
+            return replies.Cast<object>().ToList();
+        }
         // ============================================================
         // 📌 4. BUSCAR POSTS POR MATERIA
         // ============================================================

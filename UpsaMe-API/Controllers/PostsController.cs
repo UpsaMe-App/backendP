@@ -164,6 +164,17 @@ namespace UpsaMe_API.Controllers
                 created.UserId
             });
         }
+        // ============================================
+// GET REPLIES DE UN POST
+// ============================================
+        [HttpGet("{postId:guid}/replies")]
+        [AllowAnonymous] // o [Authorize] si quieres solo logueados
+        [ProducesResponseType(typeof(IEnumerable<object>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetReplies(Guid postId)
+        {
+            var replies = await _service.GetRepliesForPostAsync(postId);
+            return Ok(replies);
+        }
 
         // ============================================
         // SEARCH POSTS BY SUBJECT
