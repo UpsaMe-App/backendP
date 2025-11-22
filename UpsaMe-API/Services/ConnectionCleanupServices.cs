@@ -1,6 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using UpsaMe_API.Data;
 
 namespace UpsaMe_API.Services
@@ -34,8 +32,11 @@ namespace UpsaMe_API.Services
 
                     var now = DateTime.UtcNow;
 
+                    // 👉 calculás el límite de inactividad
+                    var cutoff = now - _maxInactiveTime;
+
                     var oldConnections = await db.UserConnections
-                        .Where(c => now - c.LastActivityUtc > _maxInactiveTime)
+                        .Where(c => c.LastActivityUtc < cutoff)  // ✅ esto sí se traduce bien a SQL
                         .ToListAsync(stoppingToken);
 
                     if (oldConnections.Any())
