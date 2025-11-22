@@ -15,5 +15,6 @@
 
         public string? ProfilePhotoUrl { get; set; }
         public string? Phone { get; set; }
+        public string? CalendlyUrl { get; set; } 
     }
 }

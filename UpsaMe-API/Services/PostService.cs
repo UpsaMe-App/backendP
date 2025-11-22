@@ -91,51 +91,66 @@ namespace UpsaMe_API.Services
         // 📌 2a. CREAR AYUDANTE
         // ============================================================
         public async Task<Post> CreateHelperAsync(Guid userId, CreateHelperPostDto dto)
-        {
-            if (dto.SubjectId == Guid.Empty)
+        { 
+            if (dto.SubjectId == Guid.Empty) 
                 throw new InvalidOperationException("SubjectId es obligatorio.");
 
-            var exists = await _context.Subjects
-                .AsNoTracking()
-                .AnyAsync(s => s.Id == dto.SubjectId);
+        var exists = await _context.Subjects.AsNoTracking()
+            .AnyAsync(s => s.Id == dto.SubjectId); 
+        
+        if (!exists) 
+            throw new InvalidOperationException("La materia (SubjectId) no existe.");
 
-            if (!exists)
-                throw new InvalidOperationException("La materia (SubjectId) no existe.");
+    if (dto.Capacity < 1)
+        throw new InvalidOperationException("Capacity debe ser >= 1.");
+    if (dto.MaxCapacity < 1)
+        throw new InvalidOperationException("MaxCapacity debe ser >= 1.");
+    if (dto.Capacity > dto.MaxCapacity)
+        throw new InvalidOperationException("Capacity no puede superar MaxCapacity.");
 
-            if (dto.Capacity < 1)
-                throw new InvalidOperationException("Capacity debe ser >= 1.");
-            if (dto.MaxCapacity < 1)
-                throw new InvalidOperationException("MaxCapacity debe ser >= 1.");
-            if (dto.Capacity > dto.MaxCapacity)
-                throw new InvalidOperationException("Capacity no puede superar MaxCapacity.");
+    if (string.IsNullOrWhiteSpace(dto.Title))
+        throw new InvalidOperationException("El título es obligatorio.");
+    if (string.IsNullOrWhiteSpace(dto.Content))
+        throw new InvalidOperationException("El contenido es obligatorio.");
 
-            if (string.IsNullOrWhiteSpace(dto.Title))
-                throw new InvalidOperationException("El título es obligatorio.");
-            if (string.IsNullOrWhiteSpace(dto.Content))
-                throw new InvalidOperationException("El contenido es obligatorio.");
-            if (string.IsNullOrWhiteSpace(dto.CalendlyUrl))
-                throw new InvalidOperationException("CalendlyUrl es obligatorio.");
+    // 👇 Si no viene CalendlyUrl en el DTO, lo sacamos del perfil
+    string? calendlyUrl = dto.CalendlyUrl;
+    if (string.IsNullOrWhiteSpace(calendlyUrl))
+    {
+        var user = await _context.Users
+            .AsNoTracking()
+            .FirstOrDefaultAsync(u => u.Id == userId);
 
-            var post = new Post
-            {
-                Id = Guid.NewGuid(),
-                UserId = userId,
-                Role = PostRole.Helper,
-                Title = dto.Title.Trim(),
-                Content = dto.Content.Trim(),
-                SubjectId = dto.SubjectId,
-                Capacity = dto.Capacity,
-                MaxCapacity = dto.MaxCapacity,
-                CalendlyUrl = dto.CalendlyUrl.Trim(),
-                Status = PostStatus.Active,
-                CapacityUsed = 0,
-                CreatedAtUtc = DateTime.UtcNow
-            };
+        if (user == null)
+            throw new InvalidOperationException("Usuario no encontrado.");
 
-            _context.Posts.Add(post);
-            await _context.SaveChangesAsync();
-            return post;
-        }
+        calendlyUrl = user.CalendlyUrl;
+    }
+
+    if (string.IsNullOrWhiteSpace(calendlyUrl))
+        throw new InvalidOperationException("No se ha configurado Calendly para este usuario.");
+
+    var post = new Post
+    {
+        Id = Guid.NewGuid(),
+        UserId = userId,
+        Role = PostRole.Helper,
+        Title = dto.Title.Trim(),
+        Content = dto.Content.Trim(),
+        SubjectId = dto.SubjectId,
+        Capacity = dto.Capacity,
+        MaxCapacity = dto.MaxCapacity,
+        CalendlyUrl = calendlyUrl.Trim(),    // 👈 aquí ya siempre hay una
+        Status = PostStatus.Active,
+        CapacityUsed = 0,
+        CreatedAtUtc = DateTime.UtcNow
+    };
+
+    _context.Posts.Add(post);
+    await _context.SaveChangesAsync();
+    return post;
+}
+
 
         // ============================================================
         // 📌 2b. CREAR ESTUDIANTE
