@@ -26,6 +26,9 @@ namespace UpsaMe_API.DTOs.User
         public IFormFile? ProfilePhoto { get; set; }
         
         public string? AvatarId { get; set; }
+        
+        [Url(ErrorMessage = "El Calendly URL no es válido.")]
+        public string? CalendlyUrl { get; set; }   // 👈 nuevo
 
     }
 }
