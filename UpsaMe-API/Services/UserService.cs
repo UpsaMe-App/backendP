@@ -37,7 +37,8 @@ namespace UpsaMe_API.Services
                 Career = user.Career?.Name,
                 Semester = user.Semester,
                 ProfilePhotoUrl = user.ProfilePhotoUrl,
-                Phone = user.Phone
+                Phone = user.Phone,
+                AvatarId = user.AvatarId 
 
             };
         }
@@ -92,6 +93,7 @@ namespace UpsaMe_API.Services
 
                 user.ProfilePhotoUrl = await _blobStorageHelper
                     .UploadProfilePhotoAsync(user.Id, stream, contentType);
+                user.AvatarId = null;
             }
             else if (!string.IsNullOrWhiteSpace(dto.AvatarId))
             {
@@ -100,6 +102,7 @@ namespace UpsaMe_API.Services
                     throw new InvalidOperationException("Avatar no válido.");
 
                 user.ProfilePhotoUrl = avatarUrl;
+                user.AvatarId = dto.AvatarId;
             }
 
             await _context.SaveChangesAsync(ct);
