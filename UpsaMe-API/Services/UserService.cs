@@ -37,7 +37,9 @@ namespace UpsaMe_API.Services
                 Career = user.Career?.Name,
                 Semester = user.Semester,
                 ProfilePhotoUrl = user.ProfilePhotoUrl,
-                Phone = user.Phone
+                AvatarId = user.AvatarId, 
+                Phone = user.Phone,
+                CalendlyUrl = user.CalendlyUrl  
 
             };
         }
@@ -60,6 +62,9 @@ namespace UpsaMe_API.Services
 
             if (!string.IsNullOrWhiteSpace(dto.Phone))
                 user.Phone = dto.Phone.Trim();
+            if (!string.IsNullOrWhiteSpace(dto.CalendlyUrl))
+                user.CalendlyUrl = dto.CalendlyUrl.Trim();
+
 
             if (dto.Semester.HasValue)
                 user.Semester = dto.Semester.Value;
@@ -92,6 +97,7 @@ namespace UpsaMe_API.Services
 
                 user.ProfilePhotoUrl = await _blobStorageHelper
                     .UploadProfilePhotoAsync(user.Id, stream, contentType);
+                user.AvatarId = null;
             }
             else if (!string.IsNullOrWhiteSpace(dto.AvatarId))
             {
@@ -100,7 +106,10 @@ namespace UpsaMe_API.Services
                     throw new InvalidOperationException("Avatar no válido.");
 
                 user.ProfilePhotoUrl = avatarUrl;
+                user.AvatarId = dto.AvatarId;
             }
+            if (!string.IsNullOrWhiteSpace(dto.CalendlyUrl))
+                user.CalendlyUrl = dto.CalendlyUrl.Trim();
 
             await _context.SaveChangesAsync(ct);
         }

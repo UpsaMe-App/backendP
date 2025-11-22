@@ -40,4 +40,10 @@ public class User
 
     public string? RefreshToken { get; set; }
     public DateTime? RefreshTokenExpiresAtUtc { get; set; }
+    [MaxLength(100)]
+    public string? AvatarId { get; set; }
+    public string? CalendlyUrl { get; set; }   // 👈 nuevo
+    
+    
+
 }

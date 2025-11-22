@@ -20,7 +20,8 @@ namespace UpsaMe_API.DTOs.Posts
         public int MaxCapacity { get; set; }
 
         // Disponibilidad de horario (Calendly)
-        [Required] [MaxLength(500)] public string CalendlyUrl { get; set; } = string.Empty;
+        [MaxLength(500)]
+        public string? CalendlyUrl { get; set; }
     }
 
     // 🎓 Crear post de ESTUDIANTE
