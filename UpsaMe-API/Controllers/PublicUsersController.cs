@@ -32,6 +32,7 @@ namespace UpsaMe_API.Controllers
                     u.Id,
                     FullName = u.FirstName + " " + u.LastName,
                     u.Email,
+                    u.Phone,            // ✅ AGREGADO
                     Career = u.Career != null ? u.Career.Name : null,
                     u.Semester,
                     u.ProfilePhotoUrl
