@@ -15,8 +15,8 @@ namespace UpsaMe_API.Services
         }
 
         // ============================================================
-        // 📌 1. FEED GENERAL (Home)
-        // ============================================================
+// 📌 1. FEED GENERAL (Home)
+// ============================================================
         public async Task<List<object>> GetFeedAsync(PostRole? role = null, int page = 1, int pageSize = 10)
         {
             if (page < 1) page = 1;
@@ -25,6 +25,7 @@ namespace UpsaMe_API.Services
             var query = _context.Posts
                 .AsNoTracking()
                 .Include(p => p.User)
+                .ThenInclude(u => u.Career)   // 👈 para poder sacar la carrera del autor
                 .Include(p => p.Subject)
                 .Include(p => p.Replies)
                 .Where(p => p.Status != PostStatus.Deleted)
@@ -50,11 +51,16 @@ namespace UpsaMe_API.Services
                     p.CapacityUsed,
                     p.CreatedAtUtc,
 
-                    // Para ir al perfil del autor desde el frontend
+                    // 🔹 Autor: para perfil y UI
                     AuthorId = p.UserId,
                     Author = p.User != null ? $"{p.User.FirstName} {p.User.LastName}" : "Anónimo",
 
-                    // Para mostrar la materia en la card
+                    // ✅ LO NUEVO: avatar, foto y carrera del autor
+                    AuthorAvatarId = p.User != null ? p.User.AvatarId : null,
+                    AuthorProfilePhotoUrl = p.User != null ? p.User.ProfilePhotoUrl : null,
+                    AuthorCareer = p.User != null && p.User.Career != null ? p.User.Career.Name : null,
+
+                    // Materia en la card
                     SubjectId = p.SubjectId,
                     Subject = p.Subject != null ? p.Subject.Name : null,
 
@@ -64,6 +70,7 @@ namespace UpsaMe_API.Services
 
             return rows.Cast<object>().ToList();
         }
+
 
         // ============================================================
         // 📌 2. CREAR POST (GENÉRICO - no se usa directo desde el controller)
