@@ -9,6 +9,7 @@ namespace UpsaMe_API.Data
 
         public DbSet<NotificationDevice> NotificationDevices => Set<NotificationDevice>();
         public DbSet<Notification> Notifications => Set<Notification>();
+        public DbSet<UserFavorite> UserFavorites { get; set; } = null!;
         
         // Core
         public DbSet<User> Users => Set<User>();
@@ -110,6 +111,23 @@ namespace UpsaMe_API.Data
                 .WithMany()
                 .HasForeignKey(r => r.UserId)
                 .OnDelete(DeleteBehavior.Restrict);
+            
+            modelBuilder.Entity<UserFavorite>(entity =>
+            {
+                // Clave compuesta: un usuario no puede guardar al mismo favorito dos veces
+                entity.HasKey(uf => new { uf.UserId, uf.FavoriteUserId });
+
+                entity.HasOne(uf => uf.User)
+                    .WithMany(u => u.Favorites)
+                    .HasForeignKey(uf => uf.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(uf => uf.FavoriteUser)
+                    .WithMany() // si luego agregas FavoritedBy, podrías poner .WithMany(u => u.FavoritedBy)
+                    .HasForeignKey(uf => uf.FavoriteUserId)
+                    .OnDelete(DeleteBehavior.NoAction); // evita ciclo de cascadas
+            });
+
         }
     }
 }

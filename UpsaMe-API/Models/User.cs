@@ -43,7 +43,5 @@ public class User
     [MaxLength(100)]
     public string? AvatarId { get; set; }
     public string? CalendlyUrl { get; set; }   // 👈 nuevo
-    
-    
-
+    public ICollection<UserFavorite> Favorites { get; set; } = new List<UserFavorite>();
 }
