@@ -175,6 +175,34 @@ namespace UpsaMe_API.Controllers
             var replies = await _service.GetRepliesForPostAsync(postId);
             return Ok(replies);
         }
+        // ============================================
+        // GET MY REPLIES (respuestas que YO hice)
+        // ============================================
+        [HttpGet("replies/mine")]
+        [Authorize]
+        [ProducesResponseType(typeof(IEnumerable<MyReplyDto>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetMyReplies()
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier) ?? User.FindFirst("sub");
+            if (userIdClaim == null) return Unauthorized();
+
+            var userId = Guid.Parse(userIdClaim.Value);
+
+            var replies = await _service.GetRepliesByUserAsync(userId);
+            return Ok(replies);
+        }
+        // ============================================
+// GET USER REPLIES (público por userId)
+// ============================================
+        [HttpGet("replies/user/{userId:guid}")]
+        [AllowAnonymous]
+        [ProducesResponseType(typeof(IEnumerable<MyReplyDto>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetRepliesByUser(Guid userId)
+        {
+            var replies = await _service.GetRepliesByUserPublicAsync(userId);
+            return Ok(replies);
+        }
+
 
         // ============================================
         // SEARCH POSTS BY SUBJECT
