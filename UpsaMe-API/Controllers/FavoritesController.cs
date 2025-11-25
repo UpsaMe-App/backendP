@@ -137,5 +137,37 @@ namespace UpsaMe_API.Controllers
 
             return Ok(exists);
         }
+        /// GET /favorites/{userId}
+        /// Público: permite ver los favoritos de cualquier usuario
+        [HttpGet("{userId:guid}")]
+        [AllowAnonymous]
+        [ProducesResponseType(typeof(IEnumerable<object>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetFavoritesByUser(Guid userId)
+        {
+            var userExists = await _context.Users.AnyAsync(u => u.Id == userId);
+            if (!userExists)
+                return NotFound("Usuario no encontrado.");
+
+            var favorites = await _context.UserFavorites
+                .AsNoTracking()
+                .Where(uf => uf.UserId == userId)
+                .Include(uf => uf.FavoriteUser)!.ThenInclude(u => u.Career)
+                .OrderByDescending(uf => uf.CreatedAtUtc)
+                .ToListAsync();
+
+            // Para cada favorito calcular cuántas personas lo tienen como favorito
+            var result = favorites.Select(uf => new 
+            {
+                Id = uf.FavoriteUser.Id,
+                FullName = $"{uf.FavoriteUser.FirstName} {uf.FavoriteUser.LastName}",
+                AvatarId = uf.FavoriteUser.AvatarId,
+                ProfilePhotoUrl = uf.FavoriteUser.ProfilePhotoUrl,
+                Career = uf.FavoriteUser.Career?.Name,
+                FavoriteCount = _context.UserFavorites.Count(f => f.FavoriteUserId == uf.FavoriteUserId)
+            });
+
+            return Ok(result);
+        }
+
     }
 }

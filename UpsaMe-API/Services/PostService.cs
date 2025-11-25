@@ -266,6 +266,7 @@ namespace UpsaMe_API.Services
         {
             var replies = await _context.PostReplies
                 .AsNoTracking()
+                .Include(r => r.User)   // 👈 Traemos el usuario (para avatar y nombre)
                 .Include(r => r.User)
                 .Where(r => r.PostId == postId)
                 .OrderBy(r => r.CreatedAtUtc)
@@ -274,13 +275,92 @@ namespace UpsaMe_API.Services
                     r.Id,
                     r.Content,
                     r.CreatedAtUtc,
+                    r.User.AvatarId,
                     AuthorId = r.UserId,
+                    r.User.ProfilePhotoUrl,
                     Author = r.User != null ? $"{r.User.FirstName} {r.User.LastName}" : "Anónimo"
                 })
                 .ToListAsync();
 
             return replies.Cast<object>().ToList();
         }
+        //para ver los mis replies de un post
+        public async Task<List<MyReplyDto>> GetRepliesByUserAsync(Guid userId)
+        {
+            var replies = await _context.PostReplies
+                .AsNoTracking()
+                .Where(r => r.UserId == userId)
+                .Include(r => r.User)                      // autor de la reply
+                .Include(r => r.Post)!.ThenInclude(p => p.User)   // autor del post original
+                .Include(r => r.Post)!.ThenInclude(p => p.Subject)
+                .OrderByDescending(r => r.CreatedAtUtc)
+                .ToListAsync();
+
+            return replies.Select(r => new MyReplyDto
+            {
+                ReplyId = r.Id,
+                Content = r.Content,
+                CreatedAtUtc = r.CreatedAtUtc,
+
+                ReplyAuthorId = r.UserId,
+                ReplyAuthorFullName = $"{r.User!.FirstName} {r.User.LastName}",
+                ReplyAuthorAvatarId = r.User.AvatarId,
+                ReplyAuthorProfilePhotoUrl = r.User.ProfilePhotoUrl,
+
+                PostId = r.PostId,
+                PostTitle = r.Post!.Title,
+                PostContentPreview = r.Post.Content.Length > 200 
+                    ? r.Post.Content[..200] + "..." 
+                    : r.Post.Content,
+
+                PostAuthorId = r.Post.UserId,
+                PostAuthorFullName = $"{r.Post.User!.FirstName} {r.Post.User.LastName}",
+                PostAuthorAvatarId = r.Post.User.AvatarId,
+                PostAuthorProfilePhotoUrl = r.Post.User.ProfilePhotoUrl,
+
+                SubjectId = r.Post.SubjectId,
+                SubjectName = r.Post.Subject?.Name
+            }).ToList();
+        }
+        public async Task<List<MyReplyDto>> GetRepliesByUserPublicAsync(Guid userId)
+        {
+            var replies = await _context.PostReplies
+                .AsNoTracking()
+                .Where(r => r.UserId == userId)
+                .Include(r => r.User)                      // autor de la reply
+                .Include(r => r.Post)!.ThenInclude(p => p.User)   // autor del post original
+                .Include(r => r.Post)!.ThenInclude(p => p.Subject)
+                .OrderByDescending(r => r.CreatedAtUtc)
+                .ToListAsync();
+
+            return replies.Select(r => new MyReplyDto
+            {
+                ReplyId = r.Id,
+                Content = r.Content,
+                CreatedAtUtc = r.CreatedAtUtc,
+
+                ReplyAuthorId = r.UserId,
+                ReplyAuthorFullName = $"{r.User!.FirstName} {r.User.LastName}",
+                ReplyAuthorAvatarId = r.User.AvatarId,
+                ReplyAuthorProfilePhotoUrl = r.User.ProfilePhotoUrl,
+
+                PostId = r.PostId,
+                PostTitle = r.Post!.Title,
+                PostContentPreview = r.Post.Content.Length > 200
+                    ? r.Post.Content[..200] + "..."
+                    : r.Post.Content,
+
+                PostAuthorId = r.Post.UserId,
+                PostAuthorFullName = $"{r.Post.User!.FirstName} {r.Post.User.LastName}",
+                PostAuthorAvatarId = r.Post.User.AvatarId,
+                PostAuthorProfilePhotoUrl = r.Post.User.ProfilePhotoUrl,
+
+                SubjectId = r.Post.SubjectId,
+                SubjectName = r.Post.Subject?.Name
+            }).ToList();
+        }
+
+
         // ============================================================
         // 📌 4. BUSCAR POSTS POR MATERIA
         // ============================================================
