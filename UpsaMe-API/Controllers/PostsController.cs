@@ -303,8 +303,8 @@ namespace UpsaMe_API.Controllers
         }
 
         // ============================================
-        // GET MY POSTS (solo dueño)
-        // ============================================
+// GET MY POSTS (solo dueño)
+// ============================================
         [HttpGet("mine")]
         [Authorize]
         [ProducesResponseType(typeof(IEnumerable<Post>), StatusCodes.Status200OK)]
@@ -317,5 +317,6 @@ namespace UpsaMe_API.Controllers
             var posts = await _service.GetByUserAsync(userId);
             return Ok(posts);
         }
+
     }
 }  
