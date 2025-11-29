@@ -479,6 +479,9 @@ namespace UpsaMe_API.Services
         {
             return await _context.Posts
                 .Where(p => p.UserId == userId && p.Status != PostStatus.Deleted)
+                .Include(p => p.User)      // 👈 trae el usuario
+                .Include(p => p.Subject)   // opcional, si quieres la materia también
+                //.Include(p => p.Replies) // opcional si quieres respuestas
                 .OrderByDescending(p => p.CreatedAtUtc)
                 .ToListAsync();
         }
