@@ -70,7 +70,9 @@ namespace UpsaMe_API.Services
                     SubjectId = p.SubjectId,
                     Subject = p.Subject != null ? p.Subject.Name : null,
 
-                    RepliesCount = p.Replies != null ? p.Replies.Count : 0
+                    RepliesCount = p.Replies != null ? p.Replies.Count : 0,
+                    
+                    ImageUrl = p.ImageUrl 
                 })
                 .ToListAsync();
 
@@ -425,7 +427,8 @@ namespace UpsaMe_API.Services
                     AuthorId = p.UserId,
                     Author = p.User != null ? $"{p.User.FirstName} {p.User.LastName}" : "Anónimo",
                     SubjectId = p.SubjectId,
-                    Subject = p.Subject != null ? p.Subject.Name : null
+                    Subject = p.Subject != null ? p.Subject.Name : null,
+                    ImageUrl = p.ImageUrl
                 })
                 .ToListAsync();
 
