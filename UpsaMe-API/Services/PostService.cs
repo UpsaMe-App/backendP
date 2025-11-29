@@ -168,7 +168,7 @@ namespace UpsaMe_API.Services
         // ============================================================
         // 📌 2b. CREAR ESTUDIANTE
         // ============================================================
-        public async Task<Post> CreateStudentAsync(Guid userId, CreateStudentPostDto dto)
+        public async Task<Post> CreateStudentAsync(Guid userId, CreateStudentPostDto dto, string? imageUrl = null)
         {
             if (dto.SubjectId == Guid.Empty)
                 throw new InvalidOperationException("SubjectId es obligatorio.");
@@ -194,6 +194,7 @@ namespace UpsaMe_API.Services
                 Content = dto.Content.Trim(),
                 SubjectId = dto.SubjectId,
                 Status = PostStatus.Active,
+                ImageUrl = imageUrl,
                 Capacity = null,
                 MaxCapacity = null,
                 CalendlyUrl = null,
