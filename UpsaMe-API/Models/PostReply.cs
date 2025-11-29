@@ -18,6 +18,8 @@ namespace UpsaMe_API.Models
 
         [Required]
         public string Content { get; set; } = string.Empty;
+        [MaxLength(500)]
+        public string? ImageUrl { get; set; }   // 👈 NUEVO
 
         public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
     }

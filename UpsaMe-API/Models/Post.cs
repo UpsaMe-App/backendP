@@ -54,6 +54,9 @@ namespace UpsaMe_API.Models
 
         public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
         public DateTime? UpdatedAtUtc { get; set; }
+        [MaxLength(500)]
+        public string? ImageUrl { get; set; }   // 👈 NUEVO
+
 
         // Respuestas/comentarios al post
         public ICollection<PostReply>? Replies { get; set; }

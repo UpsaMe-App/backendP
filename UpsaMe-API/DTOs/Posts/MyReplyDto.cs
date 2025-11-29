@@ -27,5 +27,6 @@
         // Opcional
         public Guid? SubjectId { get; set; }
         public string? SubjectName { get; set; }
+        public string? ImageUrl { get; set; }
     }
 }

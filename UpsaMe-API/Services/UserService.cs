@@ -1,19 +1,17 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using UpsaMe_API.Data;
 using UpsaMe_API.DTOs.User;
-using UpsaMe_API.Helpers;
+using UpsaMe_API.Models;
 
 namespace UpsaMe_API.Services
 {
     public class UserService
     {
         private readonly UpsaMeDbContext _context;
-        private readonly BlobStorageHelper _blobStorageHelper;
 
-        public UserService(UpsaMeDbContext context, BlobStorageHelper blobStorageHelper)
+        public UserService(UpsaMeDbContext context)
         {
             _context = context;
-            _blobStorageHelper = blobStorageHelper;
         }
 
         // ======================================================
@@ -37,15 +35,14 @@ namespace UpsaMe_API.Services
                 Career = user.Career?.Name,
                 Semester = user.Semester,
                 ProfilePhotoUrl = user.ProfilePhotoUrl,
-                AvatarId = user.AvatarId, 
+                AvatarId = user.AvatarId,
                 Phone = user.Phone,
-                CalendlyUrl = user.CalendlyUrl  
-
+                CalendlyUrl = user.CalendlyUrl
             };
         }
 
         // ======================================================
-        // ACTUALIZAR PERFIL
+        // ACTUALIZAR PERFIL (SIN manejar archivos aquí)
         // ======================================================
         public async Task UpdateProfileAsync(Guid userId, UpdateProfileDto dto, CancellationToken ct = default)
         {
@@ -62,15 +59,14 @@ namespace UpsaMe_API.Services
 
             if (!string.IsNullOrWhiteSpace(dto.Phone))
                 user.Phone = dto.Phone.Trim();
+
             if (!string.IsNullOrWhiteSpace(dto.CalendlyUrl))
                 user.CalendlyUrl = dto.CalendlyUrl.Trim();
-
 
             if (dto.Semester.HasValue)
                 user.Semester = dto.Semester.Value;
 
             // ---------- Carrera (FK) ----------
-            // Solo actualiza si vino y existe en la BD
             if (dto.CareerId.HasValue)
             {
                 var exists = await _context.Careers
@@ -83,34 +79,28 @@ namespace UpsaMe_API.Services
                 user.CareerId = dto.CareerId.Value;
             }
 
-            // ---------- Foto / Avatar ----------
-            // Prioridad:
-            // 1) Si viene archivo -> subimos a Blob
-            // 2) Si NO viene archivo pero sí AvatarId -> usamos avatar fijo
-            if (dto.ProfilePhoto != null && dto.ProfilePhoto.Length > 0)
+            // ---------- Avatar (sin archivo) ----------
+            if (!string.IsNullOrWhiteSpace(dto.AvatarId))
             {
-                var contentType = string.IsNullOrWhiteSpace(dto.ProfilePhoto.ContentType)
-                    ? "image/jpeg"
-                    : dto.ProfilePhoto.ContentType;
-
-                using var stream = dto.ProfilePhoto.OpenReadStream();
-
-                user.ProfilePhotoUrl = await _blobStorageHelper
-                    .UploadProfilePhotoAsync(user.Id, stream, contentType);
-                user.AvatarId = null;
-            }
-            else if (!string.IsNullOrWhiteSpace(dto.AvatarId))
-            {
-                var avatarUrl = AvatarCatalog.ResolveUrl(dto.AvatarId);
-                if (avatarUrl == null)
-                    throw new InvalidOperationException("Avatar no válido.");
-
-                user.ProfilePhotoUrl = avatarUrl;
+                // Solo guardamos el Id del avatar; la URL la resuelves en el front
                 user.AvatarId = dto.AvatarId;
             }
-            if (!string.IsNullOrWhiteSpace(dto.CalendlyUrl))
-                user.CalendlyUrl = dto.CalendlyUrl.Trim();
 
+            await _context.SaveChangesAsync(ct);
+        }
+
+        // ======================================================
+        // ACTUALIZAR SOLO LA URL DE LA FOTO DE PERFIL
+        // (La imagen ya fue subida a Azure desde el controller)
+        // ======================================================
+        public async Task UpdateProfilePhotoUrlAsync(Guid userId, string imageUrl, CancellationToken ct = default)
+        {
+            var user = await _context.Users.FindAsync(new object?[] { userId }, ct);
+            if (user == null) return;
+
+            user.ProfilePhotoUrl = imageUrl;
+
+            _context.Users.Update(user);
             await _context.SaveChangesAsync(ct);
         }
     }

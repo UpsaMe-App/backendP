@@ -13,6 +13,12 @@ namespace UpsaMe_API.Services
         {
             _context = context;
         }
+        public Task SaveChangesAsync()
+        {
+            return _context.SaveChangesAsync();
+        }
+        
+
 
         // ============================================================
 // 📌 1. FEED GENERAL (Home)
@@ -278,6 +284,7 @@ namespace UpsaMe_API.Services
                     r.User.AvatarId,
                     AuthorId = r.UserId,
                     r.User.ProfilePhotoUrl,
+                    r.ImageUrl,
                     Author = r.User != null ? $"{r.User.FirstName} {r.User.LastName}" : "Anónimo"
                 })
                 .ToListAsync();
@@ -319,7 +326,8 @@ namespace UpsaMe_API.Services
                 PostAuthorProfilePhotoUrl = r.Post.User.ProfilePhotoUrl,
 
                 SubjectId = r.Post.SubjectId,
-                SubjectName = r.Post.Subject?.Name
+                SubjectName = r.Post.Subject?.Name,
+                ImageUrl = r.ImageUrl
             }).ToList();
         }
         public async Task<List<MyReplyDto>> GetRepliesByUserPublicAsync(Guid userId)
@@ -356,7 +364,9 @@ namespace UpsaMe_API.Services
                 PostAuthorProfilePhotoUrl = r.Post.User.ProfilePhotoUrl,
 
                 SubjectId = r.Post.SubjectId,
-                SubjectName = r.Post.Subject?.Name
+                SubjectName = r.Post.Subject?.Name,
+                ImageUrl = r.ImageUrl
+
             }).ToList();
         }
 

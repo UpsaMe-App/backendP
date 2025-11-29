@@ -33,8 +33,9 @@ namespace UpsaMe_API.Services
         // =======================
         // REGISTER
         // =======================
-        public async Task<TokenResponseDto> RegisterAsync(RegisterDto dto)
+        public async Task<TokenResponseDto> RegisterAsync(RegisterDto dto, CancellationToken ct)
         {
+            ct.ThrowIfCancellationRequested();
             var email = (dto.Email ?? string.Empty).Trim().ToLowerInvariant();
             if (!UpsaEmailRegex.IsMatch(email))
                 throw new InvalidOperationException("Email institucional no válido.");
@@ -61,6 +62,16 @@ namespace UpsaMe_API.Services
             await _context.SaveChangesAsync();
 
             return await GenerateTokensAsync(user);
+        }
+        public async Task UpdateProfilePhotoUrlAsync(Guid userId, string imageUrl, CancellationToken ct = default)
+        {
+            var user = await _context.Users.FindAsync(new object?[] { userId }, ct);
+            if (user == null) return;
+
+            user.ProfilePhotoUrl = imageUrl;
+
+            _context.Users.Update(user);
+            await _context.SaveChangesAsync(ct);
         }
 
         // =======================
