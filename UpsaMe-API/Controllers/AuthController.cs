@@ -3,6 +3,9 @@ using Microsoft.AspNetCore.Mvc;
 using System.IdentityModel.Tokens.Jwt;
 using UpsaMe_API.DTOs.Auth;
 using UpsaMe_API.Services;
+using Microsoft.Extensions.Options;
+using UpsaMe_API.Config;
+using UpsaMe_API.Helpers;
 
 namespace UpsaMe_API.Controllers
 {
@@ -12,30 +15,53 @@ namespace UpsaMe_API.Controllers
     {
         private readonly AuthService _authService;
         private readonly IConnectionService _connectionService;
+        private readonly BlobStorageHelper _blobHelper;
+        private readonly AzureSettings _azureSettings;
 
-        public AuthController(AuthService authService, IConnectionService connectionService)
+        public AuthController(AuthService authService, IConnectionService connectionService, BlobStorageHelper blobHelper,
+            IOptions<AzureSettings> azureOptions)
         {
             _authService = authService;
             _connectionService = connectionService;
+            _blobHelper = blobHelper;
+            _azureSettings = azureOptions.Value;
         }
 
         /// <summary>Registro de usuario UPSA.</summary>
         [HttpPost("register")]
         [AllowAnonymous]
+        [Consumes("multipart/form-data")]
         [ProducesResponseType(typeof(TokenResponseDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<TokenResponseDto>> Register(
-            [FromBody] RegisterDto dto,
+            [FromForm] RegisterDto dto,
+            IFormFile? profilePhoto,
             CancellationToken ct)
         {
             try
             {
-                var tokens = await _authService.RegisterAsync(dto);
+                // 1) Registrar usuario como siempre
+                var tokens = await _authService.RegisterAsync(dto, ct);
 
-                // EXTRAER userId desde accessToken
+                // 2) EXTRAER userId desde accessToken (ya lo tenías)
                 var userId = ExtractUserIdFromToken(tokens.AccessToken);
                 if (userId != Guid.Empty)
+                {
                     await _connectionService.RegisterConnectionAsync(userId);
+
+                    // 3) Si viene foto de perfil, subirla a Azure Blob y guardar la URL
+                    if (profilePhoto != null)
+                    {
+                        var container = _azureSettings.ProfilePhotosContainer; // ej. "profile-photos"
+                        var imageUrl = await _blobHelper.UploadPngAsync(
+                            profilePhoto,
+                            container,
+                            $"user_{userId}");
+
+                        // Método nuevo en AuthService para actualizar la foto
+                        await _authService.UpdateProfilePhotoUrlAsync(userId, imageUrl, ct);
+                    }
+                }
 
                 return Ok(tokens);
             }
@@ -47,6 +73,7 @@ namespace UpsaMe_API.Controllers
                     statusCode: StatusCodes.Status400BadRequest);
             }
         }
+
 
         /// <summary>Login con email institucional y contraseña.</summary>
         [HttpPost("login")]

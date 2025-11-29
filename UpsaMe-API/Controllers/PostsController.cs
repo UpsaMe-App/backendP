@@ -4,6 +4,9 @@ using Microsoft.AspNetCore.Mvc;
 using UpsaMe_API.DTOs.Posts;
 using UpsaMe_API.Models;
 using UpsaMe_API.Services;
+using Microsoft.Extensions.Options;
+using UpsaMe_API.Config;
+using UpsaMe_API.Helpers;
 
 namespace UpsaMe_API.Controllers
 {
@@ -12,10 +15,15 @@ namespace UpsaMe_API.Controllers
     public class PostsController : ControllerBase
     {
         private readonly PostService _service;
+        private readonly BlobStorageHelper _blobHelper;
+        private readonly AzureSettings _azureSettings;
 
-        public PostsController(PostService service)
+        public PostsController(PostService service, BlobStorageHelper blobHelper,
+            IOptions<AzureSettings> azureOptions)
         {
             _service = service;
+            _blobHelper = blobHelper;
+            _azureSettings = azureOptions.Value;
         }
 
         // ============================================
@@ -64,15 +72,18 @@ namespace UpsaMe_API.Controllers
         }
 
         // ============================================
-        // CREATE STUDENT POST
-        // Campos: Título, Materia, Contenido
-        // ============================================
+// CREATE STUDENT POST
+// Campos: Título, Materia, Contenido + (opcional) imagen PNG
+// ============================================
         [HttpPost("student")]
         [Authorize]
+        [Consumes("multipart/form-data")]
         [ProducesResponseType(typeof(Post), StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        public async Task<IActionResult> CreateStudent([FromBody] CreateStudentPostDto dto)
+        public async Task<IActionResult> CreateStudent(
+            [FromForm] CreateStudentPostDto dto,
+            IFormFile? image)
         {
             if (dto == null) return BadRequest("Body requerido.");
 
@@ -84,7 +95,24 @@ namespace UpsaMe_API.Controllers
 
             try
             {
+                // 1) Crear el post como siempre (sin imagen todavía)
                 var created = await _service.CreateStudentAsync(userId, dto);
+
+                // 2) Si viene imagen, la subimos a Azure Blob y guardamos la URL
+                if (image != null)
+                {
+                    var container = _azureSettings.PostImagesContainer; // ej: "post-images"
+                    var imageUrl = await _blobHelper.UploadPngAsync(
+                        image,
+                        container,
+                        $"post_{created.Id}");
+
+                    created.ImageUrl = imageUrl;
+
+                    // Necesitas este método en PostService o guardar desde el DbContext
+                    await _service.SaveChangesAsync();
+                }
+
                 return CreatedAtAction(nameof(GetFeed), new { id = created.Id }, created);
             }
             catch (InvalidOperationException ex)
@@ -92,6 +120,7 @@ namespace UpsaMe_API.Controllers
                 return BadRequest(ex.Message);
             }
         }
+
 
         // ============================================
         // CREATE COMMENT POST
@@ -124,14 +153,18 @@ namespace UpsaMe_API.Controllers
         }
 
         // ============================================
-        // ADD REPLY
-        // ============================================
+// ADD REPLY (opcional: una imagen PNG)
+// ============================================
         [HttpPost("{postId:guid}/replies")]
         [Authorize]
+        [Consumes("multipart/form-data")]
         [ProducesResponseType(typeof(PostReply), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> AddReply(Guid postId, [FromBody] CreateReplyDto dto)
+        public async Task<IActionResult> AddReply(
+            Guid postId,
+            [FromForm] CreateReplyDto dto,
+            IFormFile? image)
         {
             if (dto is null) return BadRequest("Body requerido.");
             if (string.IsNullOrWhiteSpace(dto.Content))
@@ -152,6 +185,18 @@ namespace UpsaMe_API.Controllers
                 CreatedAtUtc = DateTime.UtcNow
             };
 
+            // 👇 Solo si se envía imagen
+            if (image != null)
+            {
+                var container = _azureSettings.ReplyImagesContainer; // ej: "reply-images"
+                var imageUrl = await _blobHelper.UploadPngAsync(
+                    image,
+                    container,
+                    $"reply_{reply.Id}");
+
+                reply.ImageUrl = imageUrl;
+            }
+
             var created = await _service.AddReplyAsync(postId, reply);
             if (created == null)
                 return NotFound(new { message = "Post no encontrado o eliminado." });
@@ -161,9 +206,11 @@ namespace UpsaMe_API.Controllers
                 created.Id,
                 created.Content,
                 created.CreatedAtUtc,
-                created.UserId
+                created.UserId,
+                created.ImageUrl  // 👈 para que el front ya reciba la URL
             });
         }
+
         // ============================================
 // GET REPLIES DE UN POST
 // ============================================
