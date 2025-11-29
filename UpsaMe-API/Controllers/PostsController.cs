@@ -95,23 +95,19 @@ namespace UpsaMe_API.Controllers
 
             try
             {
-                // 1) Crear el post como siempre (sin imagen todavía)
-                var created = await _service.CreateStudentAsync(userId, dto);
-
-                // 2) Si viene imagen, la subimos a Azure Blob y guardamos la URL
+                // 1) Si hay imagen, subirla PRIMERO
+                string? imageUrl = null;
                 if (image != null)
                 {
-                    var container = _azureSettings.PostImagesContainer; // ej: "post-images"
-                    var imageUrl = await _blobHelper.UploadPngAsync(
+                    var container = _azureSettings.PostImagesContainer;
+                    imageUrl = await _blobHelper.UploadPngAsync(
                         image,
                         container,
-                        $"post_{created.Id}");
-
-                    created.ImageUrl = imageUrl;
-
-                    // Necesitas este método en PostService o guardar desde el DbContext
-                    await _service.SaveChangesAsync();
+                        $"post_{Guid.NewGuid()}");  // Generar ID temporal
                 }
+
+                // 2) Crear post YA CON la imageUrl
+                var created = await _service.CreateStudentAsync(userId, dto, imageUrl);
 
                 return CreatedAtAction(nameof(GetFeed), new { id = created.Id }, created);
             }
