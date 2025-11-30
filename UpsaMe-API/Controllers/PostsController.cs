@@ -8,6 +8,7 @@ using Microsoft.Extensions.Options;
 using UpsaMe_API.Config;
 using UpsaMe_API.Helpers;
 
+
 namespace UpsaMe_API.Controllers
 {
     [ApiController]
@@ -211,8 +212,8 @@ namespace UpsaMe_API.Controllers
 // GET REPLIES DE UN POST
 // ============================================
         [HttpGet("{postId:guid}/replies")]
-        [AllowAnonymous] // o [Authorize] si quieres solo logueados
-        [ProducesResponseType(typeof(IEnumerable<object>), StatusCodes.Status200OK)]
+        [AllowAnonymous]
+        [ProducesResponseType(typeof(IEnumerable<PostReplyDto>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetReplies(Guid postId)
         {
             var replies = await _service.GetRepliesForPostAsync(postId);
