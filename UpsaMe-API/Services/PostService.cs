@@ -478,6 +478,25 @@ namespace UpsaMe_API.Services
             await _context.SaveChangesAsync();
             return true;
         }
+        //para eliminar una repuesta
+        public async Task<bool> DeleteReplyAsync(Guid postId, Guid replyId, Guid userId)
+        {
+            var reply = await _context.PostReplies
+                .Include(r => r.Post)
+                .FirstOrDefaultAsync(r =>
+                    r.Id == replyId &&
+                    r.PostId == postId &&
+                    r.UserId == userId); 
+            // 👆 puede borrar el autor de la reply o el autor del post
+
+            if (reply == null)
+                return false;
+
+            _context.PostReplies.Remove(reply);
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
 
         // ============================================================
         // 📌 7. POSTS DE UN USUARIO (para "Mis posts")
