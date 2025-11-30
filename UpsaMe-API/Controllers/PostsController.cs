@@ -246,6 +246,29 @@ namespace UpsaMe_API.Controllers
             var replies = await _service.GetRepliesByUserPublicAsync(userId);
             return Ok(replies);
         }
+        
+        // ============================================
+// DELETE REPLY (solo dueño o dueño del post)
+// ============================================
+        [HttpDelete("{postId:guid}/replies/{replyId:guid}")]
+        [Authorize]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> DeleteReply(Guid postId, Guid replyId)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier) ?? User.FindFirst("sub");
+            if (userIdClaim == null)
+                return Unauthorized("Token inválido: no se encontró el ID de usuario.");
+
+            var userId = Guid.Parse(userIdClaim.Value);
+
+            var ok = await _service.DeleteReplyAsync(postId, replyId, userId);
+            if (!ok)
+                return NotFound("Reply no encontrada o no autorizado para borrarla.");
+
+            return NoContent();
+        }
+
 
 
         // ============================================
