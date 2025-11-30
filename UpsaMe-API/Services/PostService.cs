@@ -13,16 +13,15 @@ namespace UpsaMe_API.Services
         {
             _context = context;
         }
+
         public Task SaveChangesAsync()
         {
             return _context.SaveChangesAsync();
         }
-        
-
 
         // ============================================================
-// 📌 1. FEED GENERAL (Home)
-// ============================================================
+        // 📌 1. FEED GENERAL (Home)
+        // ============================================================
         public async Task<List<object>> GetFeedAsync(PostRole? role = null, int page = 1, int pageSize = 10)
         {
             if (page < 1) page = 1;
@@ -71,14 +70,13 @@ namespace UpsaMe_API.Services
                     Subject = p.Subject != null ? p.Subject.Name : null,
 
                     RepliesCount = p.Replies != null ? p.Replies.Count : 0,
-                    
-                    ImageUrl = p.ImageUrl 
+
+                    ImageUrl = p.ImageUrl
                 })
                 .ToListAsync();
 
             return rows.Cast<object>().ToList();
         }
-
 
         // ============================================================
         // 📌 2. CREAR POST (GENÉRICO - no se usa directo desde el controller)
@@ -106,66 +104,65 @@ namespace UpsaMe_API.Services
         // 📌 2a. CREAR AYUDANTE
         // ============================================================
         public async Task<Post> CreateHelperAsync(Guid userId, CreateHelperPostDto dto)
-        { 
-            if (dto.SubjectId == Guid.Empty) 
+        {
+            if (dto.SubjectId == Guid.Empty)
                 throw new InvalidOperationException("SubjectId es obligatorio.");
 
-        var exists = await _context.Subjects.AsNoTracking()
-            .AnyAsync(s => s.Id == dto.SubjectId); 
-        
-        if (!exists) 
-            throw new InvalidOperationException("La materia (SubjectId) no existe.");
+            var exists = await _context.Subjects.AsNoTracking()
+                .AnyAsync(s => s.Id == dto.SubjectId);
 
-    if (dto.Capacity < 1)
-        throw new InvalidOperationException("Capacity debe ser >= 1.");
-    if (dto.MaxCapacity < 1)
-        throw new InvalidOperationException("MaxCapacity debe ser >= 1.");
-    if (dto.Capacity > dto.MaxCapacity)
-        throw new InvalidOperationException("Capacity no puede superar MaxCapacity.");
+            if (!exists)
+                throw new InvalidOperationException("La materia (SubjectId) no existe.");
 
-    if (string.IsNullOrWhiteSpace(dto.Title))
-        throw new InvalidOperationException("El título es obligatorio.");
-    if (string.IsNullOrWhiteSpace(dto.Content))
-        throw new InvalidOperationException("El contenido es obligatorio.");
+            if (dto.Capacity < 1)
+                throw new InvalidOperationException("Capacity debe ser >= 1.");
+            if (dto.MaxCapacity < 1)
+                throw new InvalidOperationException("MaxCapacity debe ser >= 1.");
+            if (dto.Capacity > dto.MaxCapacity)
+                throw new InvalidOperationException("Capacity no puede superar MaxCapacity.");
 
-    // 👇 Si no viene CalendlyUrl en el DTO, lo sacamos del perfil
-    string? calendlyUrl = dto.CalendlyUrl;
-    if (string.IsNullOrWhiteSpace(calendlyUrl))
-    {
-        var user = await _context.Users
-            .AsNoTracking()
-            .FirstOrDefaultAsync(u => u.Id == userId);
+            if (string.IsNullOrWhiteSpace(dto.Title))
+                throw new InvalidOperationException("El título es obligatorio.");
+            if (string.IsNullOrWhiteSpace(dto.Content))
+                throw new InvalidOperationException("El contenido es obligatorio.");
 
-        if (user == null)
-            throw new InvalidOperationException("Usuario no encontrado.");
+            // 👇 Si no viene CalendlyUrl en el DTO, lo sacamos del perfil
+            string? calendlyUrl = dto.CalendlyUrl;
+            if (string.IsNullOrWhiteSpace(calendlyUrl))
+            {
+                var user = await _context.Users
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(u => u.Id == userId);
 
-        calendlyUrl = user.CalendlyUrl;
-    }
+                if (user == null)
+                    throw new InvalidOperationException("Usuario no encontrado.");
 
-    if (string.IsNullOrWhiteSpace(calendlyUrl))
-        throw new InvalidOperationException("No se ha configurado Calendly para este usuario.");
+                calendlyUrl = user.CalendlyUrl;
+            }
 
-    var post = new Post
-    {
-        Id = Guid.NewGuid(),
-        UserId = userId,
-        Role = PostRole.Helper,
-        Title = dto.Title.Trim(),
-        Content = dto.Content.Trim(),
-        SubjectId = dto.SubjectId,
-        Capacity = dto.Capacity,
-        MaxCapacity = dto.MaxCapacity,
-        CalendlyUrl = calendlyUrl.Trim(),    // 👈 aquí ya siempre hay una
-        Status = PostStatus.Active,
-        CapacityUsed = 0,
-        CreatedAtUtc = DateTime.UtcNow
-    };
+            if (string.IsNullOrWhiteSpace(calendlyUrl))
+                throw new InvalidOperationException("No se ha configurado Calendly para este usuario.");
 
-    _context.Posts.Add(post);
-    await _context.SaveChangesAsync();
-    return post;
-}
+            var post = new Post
+            {
+                Id = Guid.NewGuid(),
+                UserId = userId,
+                Role = PostRole.Helper,
+                Title = dto.Title.Trim(),
+                Content = dto.Content.Trim(),
+                SubjectId = dto.SubjectId,
+                Capacity = dto.Capacity,
+                MaxCapacity = dto.MaxCapacity,
+                CalendlyUrl = calendlyUrl.Trim(),
+                Status = PostStatus.Active,
+                CapacityUsed = 0,
+                CreatedAtUtc = DateTime.UtcNow
+            };
 
+            _context.Posts.Add(post);
+            await _context.SaveChangesAsync();
+            return post;
+        }
 
         // ============================================================
         // 📌 2b. CREAR ESTUDIANTE
@@ -256,7 +253,7 @@ namespace UpsaMe_API.Services
                 .Where(p => p.Id == postId && p.Status != PostStatus.Deleted)
                 .FirstOrDefaultAsync();
 
-            if (post == null) //..
+            if (post == null)
                 return null;
 
             reply.Id = Guid.NewGuid();
@@ -268,33 +265,37 @@ namespace UpsaMe_API.Services
 
             return reply;
         }
-// ============================================================
-// 📌 3b. OBTENER REPLIES DE UN POST
-// ============================================================
-        public async Task<List<object>> GetRepliesForPostAsync(Guid postId)
+
+        // ============================================================
+        // 📌 3b. OBTENER REPLIES DE UN POST (TIPADO CON PostReplyDto)
+        // ============================================================
+        public async Task<List<PostReplyDto>> GetRepliesForPostAsync(Guid postId)
         {
             var replies = await _context.PostReplies
                 .AsNoTracking()
-                .Include(r => r.User)   // 👈 Traemos el usuario (para avatar y nombre)
-                .Include(r => r.User)
+                .Include(r => r.User) // 👈 Traemos el usuario (para avatar, nombre, foto)
                 .Where(r => r.PostId == postId)
                 .OrderBy(r => r.CreatedAtUtc)
-                .Select(r => new
+                .Select(r => new PostReplyDto
                 {
-                    r.Id,
-                    r.Content,
-                    r.CreatedAtUtc,
-                    r.User.AvatarId,
+                    Id = r.Id,
+                    PostId = r.PostId,
                     AuthorId = r.UserId,
-                    r.User.ProfilePhotoUrl,
-                    r.ImageUrl,
-                    Author = r.User != null ? $"{r.User.FirstName} {r.User.LastName}" : "Anónimo"
+                    Author = r.User != null ? $"{r.User.FirstName} {r.User.LastName}" : "Anónimo",
+                    AvatarId = r.User != null ? r.User.AvatarId : null,
+                    ProfilePhotoUrl = r.User != null ? r.User.ProfilePhotoUrl : null,
+                    Content = r.Content,
+                    ImageUrl = r.ImageUrl,
+                    CreatedAtUtc = r.CreatedAtUtc
                 })
                 .ToListAsync();
 
-            return replies.Cast<object>().ToList();
+            return replies;
         }
-        //para ver los mis replies de un post
+
+        // ============================================================
+        // 📌 3c. MIS REPLIES (privado)
+        // ============================================================
         public async Task<List<MyReplyDto>> GetRepliesByUserAsync(Guid userId)
         {
             var replies = await _context.PostReplies
@@ -319,8 +320,8 @@ namespace UpsaMe_API.Services
 
                 PostId = r.PostId,
                 PostTitle = r.Post!.Title,
-                PostContentPreview = r.Post.Content.Length > 200 
-                    ? r.Post.Content[..200] + "..." 
+                PostContentPreview = r.Post.Content.Length > 200
+                    ? r.Post.Content[..200] + "..."
                     : r.Post.Content,
 
                 PostAuthorId = r.Post.UserId,
@@ -333,6 +334,10 @@ namespace UpsaMe_API.Services
                 ImageUrl = r.ImageUrl
             }).ToList();
         }
+
+        // ============================================================
+        // 📌 3d. REPLIES PÚBLICAS POR USER
+        // ============================================================
         public async Task<List<MyReplyDto>> GetRepliesByUserPublicAsync(Guid userId)
         {
             var replies = await _context.PostReplies
@@ -369,10 +374,8 @@ namespace UpsaMe_API.Services
                 SubjectId = r.Post.SubjectId,
                 SubjectName = r.Post.Subject?.Name,
                 ImageUrl = r.ImageUrl
-
             }).ToList();
         }
-
 
         // ============================================================
         // 📌 4. BUSCAR POSTS POR MATERIA
@@ -490,4 +493,4 @@ namespace UpsaMe_API.Services
                 .ToListAsync();
         }
     }
-}                 
+}
