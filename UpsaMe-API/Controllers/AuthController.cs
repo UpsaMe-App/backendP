@@ -18,7 +18,10 @@ namespace UpsaMe_API.Controllers
         private readonly BlobStorageHelper _blobHelper;
         private readonly AzureSettings _azureSettings;
 
-        public AuthController(AuthService authService, IConnectionService connectionService, BlobStorageHelper blobHelper,
+        public AuthController(
+            AuthService authService,
+            IConnectionService connectionService,
+            BlobStorageHelper blobHelper,
             IOptions<AzureSettings> azureOptions)
         {
             _authService = authService;
@@ -58,7 +61,7 @@ namespace UpsaMe_API.Controllers
                             container,
                             $"user_{userId}");
 
-                        // Método nuevo en AuthService para actualizar la foto
+                        // Método en AuthService para actualizar la foto
                         await _authService.UpdateProfilePhotoUrlAsync(userId, imageUrl, ct);
                     }
                 }
@@ -73,7 +76,6 @@ namespace UpsaMe_API.Controllers
                     statusCode: StatusCodes.Status400BadRequest);
             }
         }
-
 
         /// <summary>Login con email institucional y contraseña.</summary>
         [HttpPost("login")]
