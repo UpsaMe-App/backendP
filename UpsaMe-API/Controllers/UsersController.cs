@@ -6,7 +6,6 @@ using UpsaMe_API.Helpers;
 using UpsaMe_API.Services;
 using Microsoft.Extensions.Options;
 using UpsaMe_API.Config;
-using UpsaMe_API.Helpers;
 
 namespace UpsaMe_API.Controllers
 {
@@ -19,7 +18,9 @@ namespace UpsaMe_API.Controllers
         private readonly BlobStorageHelper _blobHelper;
         private readonly AzureSettings _azureSettings;
 
-        public UsersController(UserService userService,BlobStorageHelper blobHelper,
+        public UsersController(
+            UserService userService,
+            BlobStorageHelper blobHelper,
             IOptions<AzureSettings> azureOptions)
         {
             _userService = userService;
@@ -27,7 +28,9 @@ namespace UpsaMe_API.Controllers
             _azureSettings = azureOptions.Value;
         }
 
-        /// <summary>Perfil del usuario autenticado.</summary>
+        // ================================================================
+        // PERFIL DEL USUARIO AUTENTICADO
+        // ================================================================
         [HttpGet("me")]
         [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -46,7 +49,9 @@ namespace UpsaMe_API.Controllers
             return Ok(user);
         }
 
-        /// <summary>Perfil público por Id.</summary>
+        // ================================================================
+        // PERFIL PÚBLICO
+        // ================================================================
         [HttpGet("{id:guid}")]
         [AllowAnonymous]
         [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
@@ -60,7 +65,9 @@ namespace UpsaMe_API.Controllers
             return Ok(user);
         }
 
-        /// 🔥 NUEVO ENDPOINT: Estado de conexión de un usuario
+        // ================================================================
+        // ESTADO ONLINE (WebSockets)
+        // ================================================================
         [HttpGet("{id:guid}/online-status")]
         [AllowAnonymous]
         public async Task<IActionResult> GetOnlineStatus(
@@ -71,7 +78,9 @@ namespace UpsaMe_API.Controllers
             return Ok(new { userId = id, online });
         }
 
-        // AVATARS
+        // ================================================================
+        // OBTENER CATÁLOGO DE AVATARES
+        // ================================================================
         [HttpGet("avatars/options")]
         [AllowAnonymous]
         public IActionResult GetAvatarOptions()
@@ -79,8 +88,9 @@ namespace UpsaMe_API.Controllers
             return Ok(AvatarCatalog.GetAll());
         }
 
-        /// <summary>Actualizar perfil del usuario autenticado.</summary>
-        /// <summary>Actualizar perfil del usuario autenticado.</summary>
+        // ================================================================
+        // ACTUALIZAR PERFIL (INCLUYE AVATAR Y FOTO REAL)
+        // ================================================================
         [HttpPut("me")]
         [RequestSizeLimit(10_000_000)]
         [Consumes("multipart/form-data")]
@@ -96,29 +106,44 @@ namespace UpsaMe_API.Controllers
 
             var userId = Guid.Parse(userIdClaim.Value);
 
-            // 1) Actualizar los datos básicos (nombre, teléfono, etc.)
+            // ------------------------------------------------------------
+            // 1) Actualizar datos básicos
+            // ------------------------------------------------------------
             await _userService.UpdateProfileAsync(userId, dto);
 
-            // 2) Si viene una nueva foto, la subimos a Azure Blob
+            // ------------------------------------------------------------
+            // 2) Si sube foto → subir a Azure, guardar URL y borrar avatar
+            // ------------------------------------------------------------
             if (profilePhoto != null)
             {
-                var container = _azureSettings.ProfilePhotosContainer; // ej. "profile-photos"
+                var container = _azureSettings.ProfilePhotosContainer;
+
                 var imageUrl = await _blobHelper.UploadPngAsync(
                     profilePhoto,
                     container,
                     $"user_{userId}");
 
-                // 3) Guardar la URL en el usuario
                 await _userService.UpdateProfilePhotoUrlAsync(userId, imageUrl);
+                await _userService.UpdateAvatarAsync(userId, null); // ❗ borrar avatar
             }
 
-            // 4) Volver a leer el perfil actualizado
+            // ------------------------------------------------------------
+            // 3) Si elige avatar → borrar foto y actualizar AvatarId
+            // ------------------------------------------------------------
+            if (!string.IsNullOrWhiteSpace(dto.AvatarId))
+            {
+                await _userService.UpdateAvatarAsync(userId, dto.AvatarId);
+                await _userService.UpdateProfilePhotoUrlAsync(userId, null); // ❗ borrar foto
+            }
+
+            // ------------------------------------------------------------
+            // 4) Devolver perfil actualizado
+            // ------------------------------------------------------------
             var updatedProfile = await _userService.GetProfileAsync(userId);
             if (updatedProfile == null)
                 return NotFound("No se pudo recuperar el perfil actualizado.");
 
             return Ok(updatedProfile);
         }
-
     }
 }

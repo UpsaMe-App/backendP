@@ -1,0 +1,19 @@
+# Publicación
+publish/
+*.zip
+
+# Build
+bin/
+obj/
+
+# Rider / VS
+*.user
+*.suo
+*.vs/
+.idea/
+
+# Logs
+*.log
+
+# Config locales (opcional)
+appsettings.Development.json

@@ -42,7 +42,7 @@ namespace UpsaMe_API.Services
         }
 
         // ======================================================
-        // ACTUALIZAR PERFIL (SIN manejar archivos aquí)
+        // ACTUALIZAR PERFIL (SIN manejar archivo aquí)
         // ======================================================
         public async Task UpdateProfileAsync(Guid userId, UpdateProfileDto dto, CancellationToken ct = default)
         {
@@ -66,7 +66,7 @@ namespace UpsaMe_API.Services
             if (dto.Semester.HasValue)
                 user.Semester = dto.Semester.Value;
 
-            // ---------- Carrera (FK) ----------
+            // ---------- Carrera ----------
             if (dto.CareerId.HasValue)
             {
                 var exists = await _context.Careers
@@ -79,21 +79,20 @@ namespace UpsaMe_API.Services
                 user.CareerId = dto.CareerId.Value;
             }
 
-            // ---------- Avatar (sin archivo) ----------
+            // ---------- Si elige avatar → guardar y limpiar foto ----------
             if (!string.IsNullOrWhiteSpace(dto.AvatarId))
             {
-                // Solo guardamos el Id del avatar; la URL la resuelves en el front
                 user.AvatarId = dto.AvatarId;
+                user.ProfilePhotoUrl = null;
             }
 
             await _context.SaveChangesAsync(ct);
         }
 
         // ======================================================
-        // ACTUALIZAR SOLO LA URL DE LA FOTO DE PERFIL
-        // (La imagen ya fue subida a Azure desde el controller)
+        // ACTUALIZAR FOTO EN BD
         // ======================================================
-        public async Task UpdateProfilePhotoUrlAsync(Guid userId, string imageUrl, CancellationToken ct = default)
+        public async Task UpdateProfilePhotoUrlAsync(Guid userId, string? imageUrl, CancellationToken ct = default)
         {
             var user = await _context.Users.FindAsync(new object?[] { userId }, ct);
             if (user == null) return;
@@ -102,6 +101,23 @@ namespace UpsaMe_API.Services
 
             _context.Users.Update(user);
             await _context.SaveChangesAsync(ct);
+        }
+
+        // ======================================================
+        // ACTUALIZAR AVATAR (Opcional desde Controller)
+        // ======================================================
+        public async Task UpdateAvatarAsync(Guid userId, string? avatarId)
+        {
+            var user = await _context.Users.FindAsync(userId);
+            if (user == null) return;
+
+            user.AvatarId = avatarId;
+
+            if (!string.IsNullOrEmpty(avatarId))
+                user.ProfilePhotoUrl = null;
+
+            _context.Users.Update(user);
+            await _context.SaveChangesAsync();
         }
     }
 }
