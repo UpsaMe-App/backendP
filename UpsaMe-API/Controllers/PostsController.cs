@@ -366,6 +366,19 @@ namespace UpsaMe_API.Controllers
             var posts = await _service.GetByUserAsync(userId);
             return Ok(posts);
         }
+        [HttpGet("{postId:guid}")]
+        [AllowAnonymous]
+        [ProducesResponseType(typeof(Post), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> GetById(Guid postId)
+        {
+            var post = await _service.GetByIdAsync(postId);
+            if (post == null)
+                return NotFound("Post no encontrado.");
+
+            return Ok(post);
+        }
+
 
     }
 }  

@@ -11,6 +11,7 @@ using UpsaMe_API.Services;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.ResponseCompression;
 using System.IO.Compression;
+using System.Text.Json.Serialization;
 using Microsoft.Extensions.FileProviders;
 using UpsaMe_API.Middleware;
 
@@ -35,6 +36,7 @@ builder.Services.AddHttpClient<CalendlyService>(client =>
             new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", apiKey);
     }
 });
+
 
 // =============================
 // APPSETTINGS tipados
@@ -179,6 +181,12 @@ builder.Services.AddSwaggerGen(c =>
         }
     });
 });
+
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+    }); 
 
 // =============================
 // Forwarded headers

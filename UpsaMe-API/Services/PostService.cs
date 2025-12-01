@@ -529,6 +529,16 @@ namespace UpsaMe_API.Services
                 .Take(pageSize)
                 .ToListAsync(ct);
         }
+        
+        public async Task<Post?> GetByIdAsync(Guid postId)
+        {
+            return await _context.Posts
+                .Include(p => p.User)
+                .Include(p => p.Subject)
+                .Include(p => p.Replies)
+                .ThenInclude(r => r.User)
+                .FirstOrDefaultAsync(p => p.Id == postId && p.Status != PostStatus.Deleted);
+        }
 
     }
 }
