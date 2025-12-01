@@ -511,5 +511,24 @@ namespace UpsaMe_API.Services
                 .OrderByDescending(p => p.CreatedAtUtc)
                 .ToListAsync();
         }
+        // PARA BY SUBJECT
+        public async Task<List<Post>> SearchBySubjectAsync(
+            string q,
+            int page,
+            int pageSize,
+            CancellationToken ct)
+        {
+            return await _context.Posts
+                .Include(p => p.User)
+                .Include(p => p.Subject)
+                .Where(p =>
+                    p.Subject != null &&
+                    p.Subject.Name.Contains(q))
+                .OrderByDescending(p => p.CreatedAtUtc)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync(ct);
+        }
+
     }
 }
