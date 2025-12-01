@@ -17,7 +17,9 @@ namespace UpsaMe_API.DTOs.Auth
 
         [Required(ErrorMessage = "El apellido es obligatorio.")]
         public string LastName { get; set; } = string.Empty;
-
+        
+        public string? AvatarId { get; set; }
+        
         // 🔹 Id de carrera
         public Guid? CareerId { get; set; }
 

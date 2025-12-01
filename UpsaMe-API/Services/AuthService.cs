@@ -36,6 +36,7 @@ namespace UpsaMe_API.Services
         public async Task<TokenResponseDto> RegisterAsync(RegisterDto dto, CancellationToken ct)
         {
             ct.ThrowIfCancellationRequested();
+
             var email = (dto.Email ?? string.Empty).Trim().ToLowerInvariant();
             if (!UpsaEmailRegex.IsMatch(email))
                 throw new InvalidOperationException("Email institucional no válido.");
@@ -52,10 +53,16 @@ namespace UpsaMe_API.Services
                 Email = email,
                 PasswordHash = PasswordHasher.HashPassword(dto.Password),
                 FirstName = dto.FirstName?.Trim() ?? string.Empty,
-                LastName  = dto.LastName?.Trim()  ?? string.Empty,
-                CareerId  = dto.CareerId,   // 👈 AQUÍ el GUID de la carrera
-                Semester  = dto.Semester,
-                Phone = dto.Phone, // 🔹 aquí
+                LastName = dto.LastName?.Trim() ?? string.Empty,
+                CareerId = dto.CareerId,
+                Semester = dto.Semester,
+                Phone = dto.Phone,
+                
+                // 👇 AvatarId viene del DTO (opcional)
+                AvatarId = dto.AvatarId,      
+
+                // 👇 Foto se llena luego vía UpdateProfilePhotoUrlAsync
+                ProfilePhotoUrl = null
             };
 
             _context.Users.Add(user);
@@ -63,6 +70,10 @@ namespace UpsaMe_API.Services
 
             return await GenerateTokensAsync(user);
         }
+
+        // =======================
+        // GUARDAR URL DE FOTO DE PERFIL
+        // =======================
         public async Task UpdateProfilePhotoUrlAsync(Guid userId, string imageUrl, CancellationToken ct = default)
         {
             var user = await _context.Users.FindAsync(new object?[] { userId }, ct);
@@ -168,6 +179,7 @@ namespace UpsaMe_API.Services
             var hasUpper = password.Any(char.IsUpper);
             var hasLower = password.Any(char.IsLower);
             var hasDigit = password.Any(char.IsDigit);
+
             if (!(hasUpper && hasLower && hasDigit))
                 throw new InvalidOperationException("La contraseña debe incluir mayúsculas, minúsculas y dígitos.");
         }

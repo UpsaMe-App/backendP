@@ -1,47 +1,70 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace UpsaMe_API.Models;
-
-public class User
+namespace UpsaMe_API.Models
 {
-    [Key]
-    public Guid Id { get; set; }
+    public class User
+    {
+        [Key]
+        public Guid Id { get; set; }
 
-    [Required, EmailAddress]
-    [MaxLength(100)]
-    public string Email { get; set; } = string.Empty;
+        // =========================
+        // IDENTIDAD Y NOMBRE
+        // =========================
+        [Required, EmailAddress, MaxLength(100)]
+        public string Email { get; set; } = string.Empty;
 
-    [Required, MaxLength(50)]
-    public string FirstName { get; set; } = string.Empty;
+        [Required, MaxLength(50)]
+        public string FirstName { get; set; } = string.Empty;
 
-    [Required, MaxLength(50)]
-    public string LastName { get; set; } = string.Empty;
+        [Required, MaxLength(50)]
+        public string LastName { get; set; } = string.Empty;
 
-    // 🔹 Nuevo: FK a Career
-    public Guid? CareerId { get; set; }
-    public Career? Career { get; set; }
+        // =========================
+        // CARRERA Y SEMESTRE
+        // =========================
+        public Guid? CareerId { get; set; }
+        public Career? Career { get; set; }
 
-    [Range(1, 10, ErrorMessage = "El semestre debe estar entre 1 y 12.")]
-    public int? Semester { get; set; }
+        [Range(1, 12, ErrorMessage = "El semestre debe estar entre 1 y 12.")]
+        public int? Semester { get; set; }
 
-    [Phone]
-    [MaxLength(20)]
-    public string? Phone { get; set; }
+        // =========================
+        // CONTACTO
+        // =========================
+        [Phone, MaxLength(20)]
+        public string? Phone { get; set; }
 
-    [Url]
-    public string? ProfilePhotoUrl { get; set; }
+        // =========================
+        // PERFIL — FOTO Y AVATAR
+        // =========================
+        [Url]
+        public string? ProfilePhotoUrl { get; set; }
 
-    [MaxLength(50)]
-    public string? Timezone { get; set; } = "America/La_Paz";
+        // ID del avatar predefinido (no archivo)
+        [MaxLength(100)]
+        public string? AvatarId { get; set; }
 
-    [Required]
-    [MaxLength(255)]
-    public string PasswordHash { get; set; } = string.Empty;
+        // Calendly opcional
+        public string? CalendlyUrl { get; set; }
 
-    public string? RefreshToken { get; set; }
-    public DateTime? RefreshTokenExpiresAtUtc { get; set; }
-    [MaxLength(100)]
-    public string? AvatarId { get; set; }
-    public string? CalendlyUrl { get; set; }   // 👈 nuevo
-    public ICollection<UserFavorite> Favorites { get; set; } = new List<UserFavorite>();
+        // Zona horaria por defecto
+        [MaxLength(50)]
+        public string? Timezone { get; set; } = "America/La_Paz";
+
+        // =========================
+        // CREDENCIALES Y TOKENS
+        // =========================
+        [Required, MaxLength(255)]
+        public string PasswordHash { get; set; } = string.Empty;
+
+        public string? RefreshToken { get; set; }
+        public DateTime? RefreshTokenExpiresAtUtc { get; set; }
+
+        // =========================
+        // RELACIONES
+        // =========================
+        public ICollection<UserFavorite> Favorites { get; set; } = new List<UserFavorite>();
+
+        // (Si tienes Posts, Replies, etc, se agregan aquí)
+    }
 }
