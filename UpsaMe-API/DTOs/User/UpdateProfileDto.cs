@@ -17,18 +17,15 @@ namespace UpsaMe_API.DTOs.User
         [Range(1, 12, ErrorMessage = "El semestre debe estar entre 1 y 12.")]
         public int? Semester { get; set; }
 
-        // 👇 Nueva propiedad para actualizar la carrera
         public Guid? CareerId { get; set; }
 
-        /// <summary>
-        /// Imagen de perfil del usuario (archivo opcional).
-        /// </summary>
+        /// Imagen subida por el usuario
         public IFormFile? ProfilePhoto { get; set; }
-        
-        public string? AvatarId { get; set; }
-        
-        [Url(ErrorMessage = "El Calendly URL no es válido.")]
-        public string? CalendlyUrl { get; set; }   // 👈 nuevo
 
+        /// Avatar seleccionado desde catálogo
+        public string? AvatarId { get; set; }
+
+        [Url(ErrorMessage = "El Calendly URL no es válido.")]
+        public string? CalendlyUrl { get; set; }
     }
 }
