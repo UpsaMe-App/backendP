@@ -275,15 +275,44 @@ namespace UpsaMe_API.Controllers
         // SEARCH POSTS BY SUBJECT
         // ============================================
         [HttpGet("search-by-subject")]
-        [AllowAnonymous]
-        [ProducesResponseType(typeof(IEnumerable<object>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> SearchBySubject(
+        public async Task<ActionResult<IEnumerable<PostListItemDto>>> SearchBySubject(
             [FromQuery] string q,
             [FromQuery] int page = 1,
-            [FromQuery] int pageSize = 10)
+            [FromQuery] int pageSize = 10,
+            CancellationToken ct = default)
         {
-            var results = await _service.SearchPostsBySubjectAsync(q, page, pageSize);
-            return Ok(results);
+            var posts = await _service.SearchBySubjectAsync(q, page, pageSize, ct);
+
+            // Convertimos a DTO aquí
+            var result = posts.Select(p => new PostListItemDto
+            {
+                Id = p.Id,
+                Role = (int)p.Role,
+                Status = (int)p.Status,
+                Title = p.Title,
+                Content = p.Content,
+                Capacity = p.Capacity,
+                MaxCapacity = p.MaxCapacity,
+                CalendlyUrl = p.CalendlyUrl,
+                CapacityUsed = p.CapacityUsed,
+                CreatedAtUtc = p.CreatedAtUtc,
+
+                AuthorId = p.UserId,
+                Author = p.User != null
+                    ? p.User.FirstName + " " + p.User.LastName
+                    : string.Empty,
+
+                SubjectId = p.SubjectId,
+                Subject = p.Subject != null ? p.Subject.Name : null,
+
+                ImageUrl = p.ImageUrl,
+
+                // Avatar + foto desde el usuario
+                AuthorAvatarId = p.User?.AvatarId,
+                AuthorProfilePhotoUrl = p.User?.ProfilePhotoUrl
+            });
+
+            return Ok(result);
         }
 
         // ============================================
